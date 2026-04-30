@@ -1,0 +1,531 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    {
+      "id": "synapchart_builtin",
+      "version": "1.0.0",
+      "priority": 1
+    }
+  ],
+  "local_blocks": [],
+  "composite_blocks": [],
+  "nodes": [
+    {
+      "node_id": "n_load_session",
+      "block_type_id": "synapchart_builtin.load_crcns_session",
+      "position": {
+        "x": -120,
+        "y": 200
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "cell_type_filter": "all",
+        "track_length_cm": 160
+      },
+      "port_order": {
+        "outputs": [
+          "spike_data",
+          "position",
+          "epochs_info"
+        ]
+      }
+    },
+    {
+      "node_id": "n_select_epoch",
+      "block_type_id": "synapchart_builtin.select_epoch",
+      "position": {
+        "x": 134.73137070860162,
+        "y": 383.4368763415629
+      },
+      "parameters": {
+        "epoch_name": "MazeEpoch",
+        "epoch_index": 0
+      }
+    },
+    {
+      "node_id": "n_clip_spikes",
+      "block_type_id": "synapchart_builtin.clip_spikes_to_epoch",
+      "position": {
+        "x": 366.69396179886826,
+        "y": 55.23770069166315
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "n_detect_laps",
+      "block_type_id": "synapchart_builtin.detect_run_laps",
+      "position": {
+        "x": 366.64068430450186,
+        "y": 332.0799413641646
+      },
+      "parameters": {
+        "min_speed_cms": 5,
+        "min_duration_s": 1,
+        "min_distance_cm": 30,
+        "gap_fill_s": 0.2
+      }
+    },
+    {
+      "node_id": "n_load_lfp",
+      "block_type_id": "synapchart_builtin.load_crcns_lfp",
+      "position": {
+        "x": 398.333847768331,
+        "y": 649.0693120334315
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "channels": "0",
+        "t_start": -1,
+        "t_end": -1,
+        "invert_signal": false
+      }
+    },
+    {
+      "node_id": "n_bandpass",
+      "block_type_id": "synapchart_builtin.bandpass_filter",
+      "position": {
+        "x": 666.8080225116307,
+        "y": 651.6087493469332
+      },
+      "parameters": {
+        "low_hz": 6,
+        "high_hz": 12,
+        "order": 4
+      }
+    },
+    {
+      "node_id": "n_phase",
+      "block_type_id": "synapchart_builtin.extract_phase",
+      "position": {
+        "x": 943.3591929281035,
+        "y": 646.3854459671562
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "n_cycles",
+      "block_type_id": "synapchart_builtin.detect_theta_cycles",
+      "position": {
+        "x": 1196.265894772862,
+        "y": 637.6158331055735
+      },
+      "parameters": {
+        "min_cycle_dur": 0.05,
+        "max_cycle_dur": 0.25,
+        "channel_index": 0
+      }
+    },
+    {
+      "node_id": "n_bin_spikes",
+      "block_type_id": "synapchart_builtin.bin_population_spikes",
+      "position": {
+        "x": 715.9161442569214,
+        "y": 423.60481066215647
+      },
+      "parameters": {
+        "bin_size_sec": 0.02
+      }
+    },
+    {
+      "node_id": "n_tuning_dir1",
+      "block_type_id": "synapchart_builtin.compute_population_tuning_curves",
+      "position": {
+        "x": 679.410880933788,
+        "y": -96.2546579568401
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5,
+        "direction": "1"
+      },
+      "port_order": {
+        "inputs": [
+          "position",
+          "spike_data",
+          "laps"
+        ]
+      }
+    },
+    {
+      "node_id": "n_decode_dir1",
+      "block_type_id": "synapchart_builtin.bayesian_decoder",
+      "position": {
+        "x": 1162.9881146454277,
+        "y": 425.24079364663044
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "spike_matrix"
+        ]
+      }
+    },
+    {
+      "node_id": "n_seq_dir1",
+      "block_type_id": "synapchart_builtin.compute_theta_sequences",
+      "position": {
+        "x": 1481.9301325060892,
+        "y": 298.77411937276287
+      },
+      "parameters": {
+        "n_time_per_cycle": 36,
+        "half_window_ms": 180,
+        "min_speed": 5,
+        "n_pos_lags": 41,
+        "direction": "1"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "position",
+          "laps",
+          "decoded",
+          "theta_cycles"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_seq_dir1",
+      "block_type_id": "synapchart_builtin.plot_theta_sequences",
+      "position": {
+        "x": 1815.3039335568124,
+        "y": 339.7606751403802
+      },
+      "parameters": {
+        "theta_freq_hz": 8,
+        "ylim_cm": 40,
+        "colormap": "hot",
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_tuning_dir2",
+      "block_type_id": "synapchart_builtin.compute_population_tuning_curves",
+      "position": {
+        "x": 670.9049989366526,
+        "y": -268.2618006277432
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5,
+        "direction": "2"
+      },
+      "port_order": {
+        "inputs": [
+          "position",
+          "spike_data",
+          "laps"
+        ]
+      }
+    },
+    {
+      "node_id": "n_decode_dir2",
+      "block_type_id": "synapchart_builtin.bayesian_decoder",
+      "position": {
+        "x": 1150.47860142185,
+        "y": 54.951811701510906
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "spike_matrix"
+        ]
+      }
+    },
+    {
+      "node_id": "n_seq_dir2",
+      "block_type_id": "synapchart_builtin.compute_theta_sequences",
+      "position": {
+        "x": 1474.3359745118132,
+        "y": -203.55268223417772
+      },
+      "parameters": {
+        "n_time_per_cycle": 36,
+        "half_window_ms": 180,
+        "min_speed": 5,
+        "n_pos_lags": 41,
+        "direction": "2"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "position",
+          "laps",
+          "decoded",
+          "theta_cycles"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_seq_dir2",
+      "block_type_id": "synapchart_builtin.plot_theta_sequences",
+      "position": {
+        "x": 1796.1903904174592,
+        "y": -12.134784516635762
+      },
+      "parameters": {
+        "theta_freq_hz": 8,
+        "ylim_cm": 40,
+        "colormap": "hot",
+        "show_on_run": true,
+        "save_path": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "e01",
+      "source_node_id": "n_load_session",
+      "source_port_id": "epochs_info",
+      "target_node_id": "n_select_epoch",
+      "target_port_id": "epochs_info"
+    },
+    {
+      "edge_id": "e02",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_clip_spikes",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e03",
+      "source_node_id": "n_select_epoch",
+      "source_port_id": "time_range",
+      "target_node_id": "n_clip_spikes",
+      "target_port_id": "time_range"
+    },
+    {
+      "edge_id": "e04",
+      "source_node_id": "n_select_epoch",
+      "source_port_id": "time_range",
+      "target_node_id": "n_load_lfp",
+      "target_port_id": "time_range"
+    },
+    {
+      "edge_id": "e05",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_detect_laps",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e08",
+      "source_node_id": "n_load_lfp",
+      "source_port_id": "lfp",
+      "target_node_id": "n_bandpass",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e09",
+      "source_node_id": "n_bandpass",
+      "source_port_id": "filtered",
+      "target_node_id": "n_phase",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e10",
+      "source_node_id": "n_phase",
+      "source_port_id": "phase",
+      "target_node_id": "n_cycles",
+      "target_port_id": "phase"
+    },
+    {
+      "edge_id": "e11",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_bin_spikes",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e13",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_tuning_dir1",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e14",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning_dir1",
+      "target_port_id": "position",
+      "data": {
+        "cp": {
+          "x": 310.67979329682584,
+          "y": 67.06985635047187
+        }
+      }
+    },
+    {
+      "edge_id": "e15",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_tuning_dir1",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e19",
+      "source_node_id": "n_bin_spikes",
+      "source_port_id": "spike_matrix",
+      "target_node_id": "n_decode_dir1",
+      "target_port_id": "spike_matrix"
+    },
+    {
+      "edge_id": "e20",
+      "source_node_id": "n_tuning_dir1",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_decode_dir1",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e21",
+      "source_node_id": "n_decode_dir1",
+      "source_port_id": "decoded",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "decoded"
+    },
+    {
+      "edge_id": "e22",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e23",
+      "source_node_id": "n_cycles",
+      "source_port_id": "theta_cycles",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "theta_cycles"
+    },
+    {
+      "edge_id": "e24",
+      "source_node_id": "n_tuning_dir1",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e25",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e26",
+      "source_node_id": "n_seq_dir1",
+      "source_port_id": "theta_sequences",
+      "target_node_id": "n_plot_seq_dir1",
+      "target_port_id": "theta_sequences"
+    },
+    {
+      "edge_id": "e33",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_tuning_dir2",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e34",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning_dir2",
+      "target_port_id": "position",
+      "data": {
+        "cp": {
+          "x": 268.17795416193565,
+          "y": -39.75909066425216
+        }
+      }
+    },
+    {
+      "edge_id": "e35",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_tuning_dir2",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e39",
+      "source_node_id": "n_bin_spikes",
+      "source_port_id": "spike_matrix",
+      "target_node_id": "n_decode_dir2",
+      "target_port_id": "spike_matrix"
+    },
+    {
+      "edge_id": "e40",
+      "source_node_id": "n_tuning_dir2",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_decode_dir2",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e41",
+      "source_node_id": "n_decode_dir2",
+      "source_port_id": "decoded",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "decoded"
+    },
+    {
+      "edge_id": "e42",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "position",
+      "data": {
+        "cp": {
+          "x": 601.9855235298663,
+          "y": 182.99367589462076
+        }
+      }
+    },
+    {
+      "edge_id": "e43",
+      "source_node_id": "n_cycles",
+      "source_port_id": "theta_cycles",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "theta_cycles"
+    },
+    {
+      "edge_id": "e44",
+      "source_node_id": "n_tuning_dir2",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e45",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "laps",
+      "data": {
+        "cp": {
+          "x": 984.3676210019594,
+          "y": 107.15574194230386
+        }
+      }
+    },
+    {
+      "edge_id": "e46",
+      "source_node_id": "n_seq_dir2",
+      "source_port_id": "theta_sequences",
+      "target_node_id": "n_plot_seq_dir2",
+      "target_port_id": "theta_sequences"
+    }
+  ]
+}

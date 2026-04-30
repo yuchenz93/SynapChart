@@ -1,0 +1,614 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    {
+      "id": "synapchart_builtin",
+      "version": "1.0.0",
+      "priority": 1
+    }
+  ],
+  "local_blocks": [
+    {
+      "block_type_id": "average_values",
+      "display_name": "average_values",
+      "category": "local",
+      "description": "",
+      "inputs": [
+        {
+          "port_id": "r1",
+          "data_type": "float",
+          "description": "",
+          "required": true
+        },
+        {
+          "port_id": "r2",
+          "data_type": "float",
+          "description": "",
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "port_id": "rave",
+          "data_type": "float",
+          "description": ""
+        }
+      ],
+      "parameters": [],
+      "source_snippet": "# numpy, NeuroData and disp() are always available.\n# disp(value) prints to the NeuroFlow console during execution.\n# Add any other imports here freely.\n# List extra pip packages in the \"Extra dependencies\" field below.\nimport numpy as np\n\nr1 = float(inputs[\"r1\"])\nr2 = float(inputs[\"r2\"])\nrave=float((r1+r2)/2)\ndisp(f\"averaged_corr_r = {rave:.4f}\")\nreturn {\n    \"rave\": rave,  # TODO\n}",
+      "dependencies": []
+    }
+  ],
+  "composite_blocks": [
+    {
+      "schema_version": "1.0",
+      "block_type": "composite",
+      "block_type_id": "phaseprecession",
+      "display_name": "PhasePrecession",
+      "category": "Composite",
+      "description": "",
+      "inputs": [
+        {
+          "port_id": "lfp_path",
+          "data_type": "str",
+          "description": "",
+          "promoted_from": {
+            "node_id": "load_lfp_001",
+            "parameter": "file_path"
+          },
+          "default": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_3_lfp.npy"
+        },
+        {
+          "port_id": "spike_path",
+          "data_type": "str",
+          "description": "",
+          "promoted_from": {
+            "node_id": "load_spikes_005",
+            "parameter": "file_path"
+          },
+          "default": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_3_spikes.npy"
+        },
+        {
+          "port_id": "pos_path",
+          "data_type": "str",
+          "description": "",
+          "promoted_from": {
+            "node_id": "load_pos_008",
+            "parameter": "file_path"
+          },
+          "default": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_3_position.npy"
+        }
+      ],
+      "outputs": [
+        {
+          "port_id": "corr_r",
+          "data_type": "float",
+          "description": "",
+          "maps_to": {
+            "node_id": "get_phase_precession_r_b5wo",
+            "port_id": "corr_r"
+          }
+        }
+      ],
+      "subflow": {
+        "nodes": [
+          {
+            "node_id": "load_lfp_001",
+            "block_type_id": "synapchart_builtin.load_npy",
+            "position": {
+              "x": -302.3183784695872,
+              "y": 778.3254973489586
+            },
+            "parameters": {
+              "file_path": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_3_lfp.npy",
+              "sampling_rate": 1250,
+              "data_type_override": "raw_signal"
+            }
+          },
+          {
+            "node_id": "bandpass_003",
+            "block_type_id": "synapchart_builtin.bandpass_filter",
+            "position": {
+              "x": 106.47130061819354,
+              "y": 785.7019702641057
+            },
+            "parameters": {
+              "low_hz": 4,
+              "high_hz": 12,
+              "order": 4
+            }
+          },
+          {
+            "node_id": "phase_004",
+            "block_type_id": "synapchart_builtin.extract_phase",
+            "position": {
+              "x": 307.43829346014957,
+              "y": 782.6080330862086
+            },
+            "parameters": {}
+          },
+          {
+            "node_id": "load_spikes_005",
+            "block_type_id": "synapchart_builtin.load_spike_times",
+            "position": {
+              "x": -306.45474000974104,
+              "y": 360.3144018396481
+            },
+            "parameters": {
+              "file_path": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_3_spikes.npy",
+              "unit_index": 0
+            }
+          },
+          {
+            "node_id": "load_pos_008",
+            "block_type_id": "synapchart_builtin.load_position",
+            "position": {
+              "x": -300.06254364800395,
+              "y": 629.8010445545906
+            },
+            "parameters": {
+              "file_path": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_3_position.npy",
+              "x_col": 1,
+              "y_col": 2,
+              "time_col": 0,
+              "sampling_rate": 30
+            }
+          },
+          {
+            "node_id": "smooth_pos_009",
+            "block_type_id": "synapchart_builtin.smooth_position",
+            "position": {
+              "x": -79.55926297470688,
+              "y": 627.7908221459404
+            },
+            "parameters": {
+              "sigma_seconds": 0.1
+            }
+          },
+          {
+            "node_id": "linear_pos_010",
+            "block_type_id": "synapchart_builtin.linearize_position",
+            "position": {
+              "x": 138.01603190827075,
+              "y": 630.9919840458646
+            },
+            "parameters": {
+              "method": "pca"
+            }
+          },
+          {
+            "node_id": "tuning_curve_011",
+            "block_type_id": "synapchart_builtin.compute_tuning_curve",
+            "position": {
+              "x": 386.31010225454736,
+              "y": 369.13548153202504
+            },
+            "parameters": {
+              "n_bins": 50,
+              "min_occupancy_sec": 0.1,
+              "smooth_sigma": 1.5
+            }
+          },
+          {
+            "node_id": "plot_tuning_012",
+            "block_type_id": "synapchart_builtin.plot_tuning_curve",
+            "position": {
+              "x": 635.857139488647,
+              "y": 418.95442950138465
+            },
+            "parameters": {
+              "title": "Place field",
+              "x_label": "Position (cm)",
+              "y_label": "Firing rate (Hz)",
+              "show_on_run": true,
+              "save_path": ""
+            }
+          },
+          {
+            "node_id": "plot_precession_013",
+            "block_type_id": "synapchart_builtin.plot_phase_precession",
+            "position": {
+              "x": 641.3298486103613,
+              "y": 530.4854646717415
+            },
+            "parameters": {
+              "title": "Theta phase precession",
+              "show_on_run": true,
+              "save_path": "",
+              "position_range": "auto"
+            },
+            "port_order": {
+              "inputs": [
+                "spikes",
+                "position",
+                "phase"
+              ]
+            }
+          },
+          {
+            "node_id": "vs_ref_channel_1dmm",
+            "block_type_id": "user_blocks.vs_ref_channel",
+            "position": {
+              "x": -102.9690195521539,
+              "y": 787.9135118526248
+            },
+            "parameters": {
+              "ref_channel_index": 3,
+              "channel_index": 1
+            }
+          },
+          {
+            "node_id": "get_phase_precession_r_b5wo",
+            "block_type_id": "get_phase_precession_r",
+            "position": {
+              "x": 639.3982901999768,
+              "y": 688.5540791956946
+            },
+            "parameters": {
+              "title": "Phase Precession",
+              "show_on_run": "true",
+              "save_path": "",
+              "position_range": "auto"
+            },
+            "port_order": {
+              "inputs": [
+                "spikes",
+                "position",
+                "phase"
+              ]
+            }
+          }
+        ],
+        "edges": [
+          {
+            "edge_id": "e03",
+            "source_node_id": "bandpass_003",
+            "source_port_id": "filtered",
+            "target_node_id": "phase_004",
+            "target_port_id": "signal"
+          },
+          {
+            "edge_id": "e06",
+            "source_node_id": "load_pos_008",
+            "source_port_id": "position",
+            "target_node_id": "smooth_pos_009",
+            "target_port_id": "position"
+          },
+          {
+            "edge_id": "e07",
+            "source_node_id": "smooth_pos_009",
+            "source_port_id": "position",
+            "target_node_id": "linear_pos_010",
+            "target_port_id": "position"
+          },
+          {
+            "edge_id": "e08",
+            "source_node_id": "load_spikes_005",
+            "source_port_id": "spikes",
+            "target_node_id": "tuning_curve_011",
+            "target_port_id": "spikes"
+          },
+          {
+            "edge_id": "e09",
+            "source_node_id": "linear_pos_010",
+            "source_port_id": "linear_pos",
+            "target_node_id": "tuning_curve_011",
+            "target_port_id": "variable"
+          },
+          {
+            "edge_id": "e10",
+            "source_node_id": "tuning_curve_011",
+            "source_port_id": "tuning_curve",
+            "target_node_id": "plot_tuning_012",
+            "target_port_id": "tuning_curve"
+          },
+          {
+            "edge_id": "e11",
+            "source_node_id": "load_spikes_005",
+            "source_port_id": "spikes",
+            "target_node_id": "plot_precession_013",
+            "target_port_id": "spikes"
+          },
+          {
+            "edge_id": "e12",
+            "source_node_id": "phase_004",
+            "source_port_id": "phase",
+            "target_node_id": "plot_precession_013",
+            "target_port_id": "phase"
+          },
+          {
+            "edge_id": "e13",
+            "source_node_id": "linear_pos_010",
+            "source_port_id": "linear_pos",
+            "target_node_id": "plot_precession_013",
+            "target_port_id": "position"
+          },
+          {
+            "edge_id": "reactflow__edge-load_lfp_001data-vs_ref_channel_1dmmsignal",
+            "source_node_id": "load_lfp_001",
+            "source_port_id": "data",
+            "target_node_id": "vs_ref_channel_1dmm",
+            "target_port_id": "signal"
+          },
+          {
+            "edge_id": "reactflow__edge-vs_ref_channel_1dmmchannel-bandpass_003signal",
+            "source_node_id": "vs_ref_channel_1dmm",
+            "source_port_id": "channel",
+            "target_node_id": "bandpass_003",
+            "target_port_id": "signal"
+          },
+          {
+            "edge_id": "reactflow__edge-phase_004phase-get_phase_precession_r_b5wophase",
+            "source_node_id": "phase_004",
+            "source_port_id": "phase",
+            "target_node_id": "get_phase_precession_r_b5wo",
+            "target_port_id": "phase"
+          },
+          {
+            "edge_id": "reactflow__edge-load_spikes_005spikes-get_phase_precession_r_b5wospikes",
+            "source_node_id": "load_spikes_005",
+            "source_port_id": "spikes",
+            "target_node_id": "get_phase_precession_r_b5wo",
+            "target_port_id": "spikes"
+          },
+          {
+            "edge_id": "reactflow__edge-linear_pos_010linear_pos-get_phase_precession_r_b5woposition",
+            "source_node_id": "linear_pos_010",
+            "source_port_id": "linear_pos",
+            "target_node_id": "get_phase_precession_r_b5wo",
+            "target_port_id": "position"
+          }
+        ],
+        "local_blocks": [
+          {
+            "block_type_id": "test1",
+            "display_name": "test1",
+            "category": "local",
+            "description": "",
+            "inputs": [
+              {
+                "port_id": "n1",
+                "data_type": "float",
+                "description": "",
+                "required": true
+              },
+              {
+                "port_id": "n2",
+                "data_type": "float",
+                "description": "",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "port_id": "n3",
+                "data_type": "float",
+                "description": ""
+              }
+            ],
+            "parameters": [],
+            "source_snippet": "n1 = float(inputs[\"n1\"])\nn2 = float(inputs[\"n2\"])\n\nreturn {\n    \"n3\": n1+n2,  # TODO\n}"
+          },
+          {
+            "block_type_id": "get_phase_precession_r",
+            "display_name": "Get Phase Precession_R",
+            "category": "Visualization",
+            "description": "Plots spike phase vs. position (the theta phase precession scatter plot).",
+            "inputs": [
+              {
+                "port_id": "spikes",
+                "data_type": "NeuroData[spike_times]",
+                "description": "Spike timestamps (seconds).",
+                "required": true
+              },
+              {
+                "port_id": "phase",
+                "data_type": "NeuroData[raw_signal]",
+                "description": "Instantaneous LFP phase (radians).",
+                "required": true
+              },
+              {
+                "port_id": "position",
+                "data_type": "NeuroData[position]",
+                "description": "Linearized or 2-D position.",
+                "required": true
+              }
+            ],
+            "outputs": [
+              {
+                "port_id": "corr_r",
+                "data_type": "float",
+                "description": "correlation value"
+              }
+            ],
+            "parameters": [
+              {
+                "name": "title",
+                "data_type": "str",
+                "default": "Phase Precession",
+                "description": "Plot title.",
+                "enum_values": ""
+              },
+              {
+                "name": "show_on_run",
+                "data_type": "bool",
+                "default": "true",
+                "description": "Open a pop-out window when executed.",
+                "enum_values": ""
+              },
+              {
+                "name": "save_path",
+                "data_type": "str",
+                "default": "",
+                "description": "Path to save the PNG. Empty = no save.",
+                "enum_values": ""
+              },
+              {
+                "name": "position_range",
+                "data_type": "str",
+                "default": "auto",
+                "description": "Position range 'auto' or 'min,max'.",
+                "enum_values": ""
+              }
+            ],
+            "source_snippet": "spikes: NeuroData = inputs[\"spikes\"]\nphase_nd: NeuroData = inputs[\"phase\"]\nposition: NeuroData = inputs[\"position\"]\n\nspike_times = spikes.array\nphase_arr = phase_nd.array if phase_nd.array.ndim == 1 else phase_nd.array[:, 0]\npos_arr = position.array if position.array.ndim == 1 else position.array[:, 0]\n\nsr_phase = phase_nd.sampling_rate or 1000.0\nsr_pos = position.sampling_rate or 30.0\n\nphase_times = phase_nd.timestamps if phase_nd.timestamps is not None else np.arange(len(phase_arr)) / sr_phase\npos_times = position.timestamps if position.timestamps is not None else np.arange(len(pos_arr)) / sr_pos\n\nspike_phases = np.interp(spike_times, phase_times, phase_arr, left=np.nan, right=np.nan)\nspike_pos = np.interp(spike_times, pos_times, pos_arr, left=np.nan, right=np.nan)\n\nvalid = ~(np.isnan(spike_phases) | np.isnan(spike_pos))\nspike_phases = spike_phases[valid]\nspike_pos = spike_pos[valid]\n\ncorr_r = float(np.corrcoef(spike_phases, spike_pos)[0, 1])\nreturn {\"corr_r\": corr_r}",
+            "dependencies": []
+          }
+        ]
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "node_id": "string_constant_qgaq",
+      "block_type_id": "synapchart_builtin.string_constant",
+      "position": {
+        "x": 166.34391020993496,
+        "y": 2.2917646642972613
+      },
+      "parameters": {
+        "value": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_1_lfp.npy"
+      }
+    },
+    {
+      "node_id": "string_constant_ozxy",
+      "block_type_id": "synapchart_builtin.string_constant",
+      "position": {
+        "x": 171,
+        "y": 88.23139334100233
+      },
+      "parameters": {
+        "value": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_1_spikes.npy"
+      }
+    },
+    {
+      "node_id": "string_constant_j7u9",
+      "block_type_id": "synapchart_builtin.string_constant",
+      "position": {
+        "x": 170.25436118264042,
+        "y": 163.53157509717425
+      },
+      "parameters": {
+        "value": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_1_position.npy"
+      }
+    },
+    {
+      "node_id": "string_constant_icaj",
+      "block_type_id": "synapchart_builtin.string_constant",
+      "position": {
+        "x": 170.37699119217683,
+        "y": 475.6376552812641
+      },
+      "parameters": {
+        "value": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_2_position.npy"
+      }
+    },
+    {
+      "node_id": "string_constant_nyku",
+      "block_type_id": "synapchart_builtin.string_constant",
+      "position": {
+        "x": 166.42798990318624,
+        "y": 386.50512738996116
+      },
+      "parameters": {
+        "value": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_2_spikes.npy"
+      }
+    },
+    {
+      "node_id": "string_constant_nxbe",
+      "block_type_id": "synapchart_builtin.string_constant",
+      "position": {
+        "x": 167.81027604416192,
+        "y": 299.0235561331175
+      },
+      "parameters": {
+        "value": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_2_lfp.npy"
+      }
+    },
+    {
+      "node_id": "average_values_81sp",
+      "block_type_id": "average_values",
+      "position": {
+        "x": 847.7045493735095,
+        "y": 203.4126340850587
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "user_blocks.phaseprecession_ajxi",
+      "block_type_id": "user_blocks.phaseprecession",
+      "position": {
+        "x": 478.05019811459863,
+        "y": 58.23554515264101
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "user_blocks.phaseprecession_9f87",
+      "block_type_id": "user_blocks.phaseprecession",
+      "position": {
+        "x": 461.6910882699293,
+        "y": 256.4722487284237
+      },
+      "parameters": {}
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "reactflow__edge-user_blocks.phaseprecession_ajxicorr_r-average_values_81spr1",
+      "source_node_id": "user_blocks.phaseprecession_ajxi",
+      "source_port_id": "corr_r",
+      "target_node_id": "average_values_81sp",
+      "target_port_id": "r1"
+    },
+    {
+      "edge_id": "reactflow__edge-user_blocks.phaseprecession_9f87corr_r-average_values_81spr2",
+      "source_node_id": "user_blocks.phaseprecession_9f87",
+      "source_port_id": "corr_r",
+      "target_node_id": "average_values_81sp",
+      "target_port_id": "r2"
+    },
+    {
+      "edge_id": "reactflow__edge-string_constant_qgaqvalue-user_blocks.phaseprecession_ajxilfp_path",
+      "source_node_id": "string_constant_qgaq",
+      "source_port_id": "value",
+      "target_node_id": "user_blocks.phaseprecession_ajxi",
+      "target_port_id": "lfp_path"
+    },
+    {
+      "edge_id": "reactflow__edge-string_constant_ozxyvalue-user_blocks.phaseprecession_ajxispike_path",
+      "source_node_id": "string_constant_ozxy",
+      "source_port_id": "value",
+      "target_node_id": "user_blocks.phaseprecession_ajxi",
+      "target_port_id": "spike_path"
+    },
+    {
+      "edge_id": "reactflow__edge-string_constant_j7u9value-user_blocks.phaseprecession_ajxipos_path",
+      "source_node_id": "string_constant_j7u9",
+      "source_port_id": "value",
+      "target_node_id": "user_blocks.phaseprecession_ajxi",
+      "target_port_id": "pos_path"
+    },
+    {
+      "edge_id": "reactflow__edge-string_constant_nxbevalue-user_blocks.phaseprecession_9f87lfp_path",
+      "source_node_id": "string_constant_nxbe",
+      "source_port_id": "value",
+      "target_node_id": "user_blocks.phaseprecession_9f87",
+      "target_port_id": "lfp_path"
+    },
+    {
+      "edge_id": "reactflow__edge-string_constant_nykuvalue-user_blocks.phaseprecession_9f87spike_path",
+      "source_node_id": "string_constant_nyku",
+      "source_port_id": "value",
+      "target_node_id": "user_blocks.phaseprecession_9f87",
+      "target_port_id": "spike_path"
+    },
+    {
+      "edge_id": "reactflow__edge-string_constant_icajvalue-user_blocks.phaseprecession_9f87pos_path",
+      "source_node_id": "string_constant_icaj",
+      "source_port_id": "value",
+      "target_node_id": "user_blocks.phaseprecession_9f87",
+      "target_port_id": "pos_path"
+    }
+  ]
+}

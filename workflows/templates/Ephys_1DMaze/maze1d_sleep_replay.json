@@ -1,0 +1,278 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    "maze1d"
+  ],
+  "local_blocks": [],
+  "composite_blocks": [],
+  "nodes": [
+    {
+      "node_id": "n_load_session",
+      "block_type_id": "synapchart_builtin.load_crcns_session",
+      "position": {
+        "x": -400,
+        "y": 0
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "cell_type_filter": "all",
+        "track_length_cm": 160
+      },
+      "port_order": {
+        "outputs": [
+          "spike_data",
+          "epochs_info",
+          "position"
+        ]
+      }
+    },
+    {
+      "node_id": "n_smooth",
+      "block_type_id": "synapchart_builtin.smooth_position",
+      "position": {
+        "x": -140,
+        "y": 280
+      },
+      "parameters": {
+        "sigma_seconds": 0.05
+      }
+    },
+    {
+      "node_id": "n_laps",
+      "block_type_id": "synapchart_builtin.detect_run_laps",
+      "position": {
+        "x": 160,
+        "y": 80
+      },
+      "parameters": {
+        "min_speed_cms": 5,
+        "min_duration_s": 1,
+        "min_distance_cm": 30,
+        "gap_fill_s": 0.2
+      }
+    },
+    {
+      "node_id": "n_states",
+      "block_type_id": "maze1d.define_maze_states",
+      "position": {
+        "x": 350,
+        "y": 80
+      },
+      "parameters": {
+        "session_id": "Achilles_10252013",
+        "min_laps": 3
+      }
+    },
+    {
+      "node_id": "n_tuning",
+      "block_type_id": "maze1d.compute_tuning_curves_1d",
+      "position": {
+        "x": 561.7563543003852,
+        "y": 268.7006418485237
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5
+      },
+      "port_order": {
+        "inputs": [
+          "states",
+          "spike_data",
+          "position"
+        ]
+      }
+    },
+    {
+      "node_id": "n_sleep_frames",
+      "block_type_id": "maze1d.detect_sleep_frames",
+      "position": {
+        "x": 160,
+        "y": -260
+      },
+      "parameters": {
+        "mua_std_threshold": 2,
+        "min_frame_s": 0.1,
+        "max_frame_s": 1.2,
+        "mua_bin_s": 0.001,
+        "smooth_sigma_s": 0.015,
+        "min_active_cells": 5,
+        "pyr_only": true
+      }
+    },
+    {
+      "node_id": "n_sleep_decode",
+      "block_type_id": "maze1d.decode_sleep_replay",
+      "position": {
+        "x": 813.4924261874196,
+        "y": -34.152246469833116
+      },
+      "parameters": {
+        "n_shuffles": 500,
+        "track_length_cm": 160,
+        "bin_size_sec": 0.02,
+        "min_pos_bins": 5
+      },
+      "port_order": {
+        "inputs": [
+          "sleep_frames",
+          "spike_data",
+          "tuning_curves"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_ratio",
+      "block_type_id": "maze1d.plot_sleep_replay_ratio",
+      "position": {
+        "x": 1092.9137355584082,
+        "y": -273.3723748395379
+      },
+      "parameters": {
+        "chance_level": 0.05,
+        "show_wc_strip": true,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_plot_pre",
+      "block_type_id": "maze1d.plot_sleep_replay_examples",
+      "position": {
+        "x": 1072.8934531450577,
+        "y": 37.482413350449235
+      },
+      "parameters": {
+        "epoch": "pre",
+        "min_abs_wc": 0.6,
+        "max_norm_jump": 0.4,
+        "max_examples": 12,
+        "n_cols": 4,
+        "cmap": "afmhot_r",
+        "clim": 0,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_plot_post",
+      "block_type_id": "maze1d.plot_sleep_replay_examples",
+      "position": {
+        "x": 1074.0711168164312,
+        "y": 277.4215661103979
+      },
+      "parameters": {
+        "epoch": "post",
+        "min_abs_wc": 0.6,
+        "max_norm_jump": 0.4,
+        "max_examples": 12,
+        "n_cols": 4,
+        "cmap": "afmhot_r",
+        "clim": 0,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "e01",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_tuning",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e02",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_smooth",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e03",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_laps",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e04",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e05",
+      "source_node_id": "n_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_states",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e06",
+      "source_node_id": "n_states",
+      "source_port_id": "states",
+      "target_node_id": "n_tuning",
+      "target_port_id": "states"
+    },
+    {
+      "edge_id": "e07",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_sleep_frames",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e08",
+      "source_node_id": "n_load_session",
+      "source_port_id": "epochs_info",
+      "target_node_id": "n_sleep_frames",
+      "target_port_id": "epochs_info"
+    },
+    {
+      "edge_id": "e09",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_sleep_decode",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e10",
+      "source_node_id": "n_tuning",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_sleep_decode",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e11",
+      "source_node_id": "n_sleep_frames",
+      "source_port_id": "sleep_frames",
+      "target_node_id": "n_sleep_decode",
+      "target_port_id": "sleep_frames"
+    },
+    {
+      "edge_id": "e12",
+      "source_node_id": "n_sleep_decode",
+      "source_port_id": "sleep_results",
+      "target_node_id": "n_plot_ratio",
+      "target_port_id": "sleep_results"
+    },
+    {
+      "edge_id": "e13",
+      "source_node_id": "n_sleep_decode",
+      "source_port_id": "sleep_results",
+      "target_node_id": "n_plot_pre",
+      "target_port_id": "sleep_results"
+    },
+    {
+      "edge_id": "e14",
+      "source_node_id": "n_sleep_decode",
+      "source_port_id": "sleep_results",
+      "target_node_id": "n_plot_post",
+      "target_port_id": "sleep_results"
+    }
+  ]
+}

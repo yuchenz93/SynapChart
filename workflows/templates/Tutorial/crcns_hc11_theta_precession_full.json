@@ -1,0 +1,938 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    {
+      "id": "synapchart_builtin",
+      "version": "1.0.0",
+      "priority": 1
+    }
+  ],
+  "local_blocks": [],
+  "composite_blocks": [],
+  "nodes": [
+    {
+      "node_id": "n_load_session",
+      "block_type_id": "synapchart_builtin.load_crcns_session",
+      "position": {
+        "x": -413.4699312412033,
+        "y": 137.9198222374378
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "cell_type_filter": "all",
+        "track_length_cm": 160
+      },
+      "port_order": {
+        "outputs": [
+          "spike_data",
+          "position",
+          "epochs_info"
+        ]
+      }
+    },
+    {
+      "node_id": "n_select_epoch",
+      "block_type_id": "synapchart_builtin.select_epoch",
+      "position": {
+        "x": -94.16395663118828,
+        "y": 369.0562214704895
+      },
+      "parameters": {
+        "epoch_name": "MazeEpoch",
+        "epoch_index": 0
+      }
+    },
+    {
+      "node_id": "n_clip_spikes",
+      "block_type_id": "synapchart_builtin.clip_spikes_to_epoch",
+      "position": {
+        "x": 359.79151081145176,
+        "y": 445.8431663574345
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "n_detect_laps",
+      "block_type_id": "synapchart_builtin.detect_run_laps",
+      "position": {
+        "x": 106.82115043454712,
+        "y": 38.362049738329944
+      },
+      "parameters": {
+        "min_speed_cms": 5,
+        "min_duration_s": 1,
+        "min_distance_cm": 30,
+        "gap_fill_s": 0.2
+      }
+    },
+    {
+      "node_id": "n_plot_laps",
+      "block_type_id": "synapchart_builtin.plot_laps",
+      "position": {
+        "x": 14.919084357209385,
+        "y": -153.17920844865404
+      },
+      "parameters": {
+        "t_window_s": 120,
+        "close_all": true,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_load_lfp",
+      "block_type_id": "synapchart_builtin.load_crcns_lfp",
+      "position": {
+        "x": 433.380460262234,
+        "y": 842.0744817462614
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "channels": "0",
+        "t_start": -1,
+        "t_end": -1,
+        "invert_signal": false
+      }
+    },
+    {
+      "node_id": "n_bandpass",
+      "block_type_id": "synapchart_builtin.bandpass_filter",
+      "position": {
+        "x": 625.5574716158814,
+        "y": 849.6179294315807
+      },
+      "parameters": {
+        "low_hz": 6,
+        "high_hz": 12,
+        "order": 4
+      }
+    },
+    {
+      "node_id": "n_phase",
+      "block_type_id": "synapchart_builtin.extract_phase",
+      "position": {
+        "x": 812.4353261719907,
+        "y": 844.6727953413374
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "n_cycles",
+      "block_type_id": "synapchart_builtin.detect_theta_cycles",
+      "position": {
+        "x": 1168.1397704805165,
+        "y": 883.9010714986778
+      },
+      "parameters": {
+        "min_cycle_dur": 0.05,
+        "max_cycle_dur": 0.25,
+        "channel_index": 0
+      }
+    },
+    {
+      "node_id": "n_bin_spikes",
+      "block_type_id": "synapchart_builtin.bin_population_spikes",
+      "position": {
+        "x": 802.4172228739524,
+        "y": 646.4038571164107
+      },
+      "parameters": {
+        "bin_size_sec": 0.02
+      }
+    },
+    {
+      "node_id": "n_bin_spikes_behav",
+      "block_type_id": "synapchart_builtin.bin_population_spikes",
+      "position": {
+        "x": 351.47554720563164,
+        "y": 647.2335789309083
+      },
+      "parameters": {
+        "bin_size_sec": 0.2
+      }
+    },
+    {
+      "node_id": "n_tuning_both",
+      "block_type_id": "synapchart_builtin.compute_population_tuning_curves",
+      "position": {
+        "x": -174.93492155502236,
+        "y": 655.1742643875929
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5,
+        "direction": "both"
+      },
+      "port_order": {
+        "inputs": [
+          "spike_data",
+          "position",
+          "laps"
+        ]
+      }
+    },
+    {
+      "node_id": "n_decode_behav",
+      "block_type_id": "synapchart_builtin.bayesian_decoder",
+      "position": {
+        "x": 37.552373656519876,
+        "y": 906.179050537392
+      },
+      "parameters": {
+        "bin_size_sec": 0.2,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "spike_matrix"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_behav_decode",
+      "block_type_id": "synapchart_builtin.plot_behavior_decoding",
+      "position": {
+        "x": 378.61493818945473,
+        "y": 986.8197497204715
+      },
+      "parameters": {
+        "max_laps_shown": 6,
+        "close_all": true,
+        "show_on_run": true,
+        "save_path": ""
+      },
+      "port_order": {
+        "inputs": [
+          "laps",
+          "tuning_curves",
+          "decoded",
+          "position"
+        ]
+      }
+    },
+    {
+      "node_id": "n_tuning_dir1",
+      "block_type_id": "synapchart_builtin.compute_population_tuning_curves",
+      "position": {
+        "x": 642.4037464721396,
+        "y": -120.16748353506227
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5,
+        "direction": "1"
+      },
+      "port_order": {
+        "inputs": [
+          "position",
+          "laps",
+          "spike_data"
+        ]
+      }
+    },
+    {
+      "node_id": "n_fields_dir1",
+      "block_type_id": "synapchart_builtin.detect_place_fields",
+      "position": {
+        "x": 963.5055676670852,
+        "y": -244.67824584781965
+      },
+      "parameters": {
+        "peak_fraction": 0.2,
+        "min_field_bins": 3,
+        "min_peak_rate": 1,
+        "require_bilateral_cutoff": true
+      }
+    },
+    {
+      "node_id": "n_plot_tc_dir1",
+      "block_type_id": "synapchart_builtin.plot_population_tuning_curves",
+      "position": {
+        "x": 1262.466678040424,
+        "y": -330.3007903223827
+      },
+      "parameters": {
+        "cells_per_row": 10,
+        "max_cells": 80,
+        "cell_filter": "pyramidal",
+        "close_all": true,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_decode_dir1",
+      "block_type_id": "synapchart_builtin.bayesian_decoder",
+      "position": {
+        "x": 1274.4812138651887,
+        "y": 217.3152000275062
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "spike_matrix"
+        ]
+      }
+    },
+    {
+      "node_id": "n_seq_dir1",
+      "block_type_id": "synapchart_builtin.compute_theta_sequences",
+      "position": {
+        "x": 1583.2473379917376,
+        "y": 112.98990341128476
+      },
+      "parameters": {
+        "n_time_per_cycle": 36,
+        "half_window_ms": 180,
+        "min_speed": 5,
+        "n_pos_lags": 41,
+        "direction": "1"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "position",
+          "laps",
+          "decoded",
+          "theta_cycles"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_seq_dir1",
+      "block_type_id": "synapchart_builtin.plot_theta_sequences",
+      "position": {
+        "x": 1854.8743725171782,
+        "y": 226.69153103163728
+      },
+      "parameters": {
+        "theta_freq_hz": 8,
+        "ylim_cm": 40,
+        "colormap": "hot",
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_precession_dir1",
+      "block_type_id": "synapchart_builtin.compute_phase_precession",
+      "position": {
+        "x": 1261.4862653023442,
+        "y": -203.7045279216909
+      },
+      "parameters": {
+        "min_spikes_per_field": 10,
+        "speed_threshold": 5,
+        "direction": "1"
+      },
+      "port_order": {
+        "inputs": [
+          "place_fields",
+          "position",
+          "laps",
+          "spike_data",
+          "phase"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_pp_dir1",
+      "block_type_id": "synapchart_builtin.plot_phase_precession_summary",
+      "position": {
+        "x": 1567.9034881762968,
+        "y": -91.30660741247925
+      },
+      "parameters": {
+        "cell_filter": "pyramidal",
+        "max_scatter_cells": 20,
+        "close_all": true,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_tuning_dir2",
+      "block_type_id": "synapchart_builtin.compute_population_tuning_curves",
+      "position": {
+        "x": 686.9882088246354,
+        "y": 231.6211061794832
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5,
+        "direction": "2"
+      },
+      "port_order": {
+        "inputs": [
+          "position",
+          "laps",
+          "spike_data"
+        ]
+      }
+    },
+    {
+      "node_id": "n_fields_dir2",
+      "block_type_id": "synapchart_builtin.detect_place_fields",
+      "position": {
+        "x": 960,
+        "y": 384
+      },
+      "parameters": {
+        "peak_fraction": 0.2,
+        "min_field_bins": 3,
+        "min_peak_rate": 1,
+        "require_bilateral_cutoff": true
+      }
+    },
+    {
+      "node_id": "n_plot_tc_dir2",
+      "block_type_id": "synapchart_builtin.plot_population_tuning_curves",
+      "position": {
+        "x": 1270.596744759295,
+        "y": 0.2445239064996656
+      },
+      "parameters": {
+        "cells_per_row": 10,
+        "max_cells": 80,
+        "cell_filter": "pyramidal",
+        "close_all": false,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_decode_dir2",
+      "block_type_id": "synapchart_builtin.bayesian_decoder",
+      "position": {
+        "x": 1442.4402760659943,
+        "y": 558.7049931499242
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "tuning_curves",
+          "spike_matrix"
+        ]
+      }
+    },
+    {
+      "node_id": "n_seq_dir2",
+      "block_type_id": "synapchart_builtin.compute_theta_sequences",
+      "position": {
+        "x": 1647.113583765073,
+        "y": 743.5582760343361
+      },
+      "parameters": {
+        "n_time_per_cycle": 36,
+        "half_window_ms": 180,
+        "min_speed": 5,
+        "n_pos_lags": 41,
+        "direction": "2"
+      },
+      "port_order": {
+        "inputs": [
+          "decoded",
+          "tuning_curves",
+          "laps",
+          "position",
+          "theta_cycles"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_seq_dir2",
+      "block_type_id": "synapchart_builtin.plot_theta_sequences",
+      "position": {
+        "x": 1891.6808829985885,
+        "y": 855.5115036313343
+      },
+      "parameters": {
+        "theta_freq_hz": 8,
+        "ylim_cm": 40,
+        "colormap": "hot",
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_precession_dir2",
+      "block_type_id": "synapchart_builtin.compute_phase_precession",
+      "position": {
+        "x": 1586.3387587345082,
+        "y": 330.0067310591435
+      },
+      "parameters": {
+        "min_spikes_per_field": 10,
+        "speed_threshold": 5,
+        "direction": "2"
+      },
+      "port_order": {
+        "inputs": [
+          "laps",
+          "position",
+          "spike_data",
+          "place_fields",
+          "phase"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_pp_dir2",
+      "block_type_id": "synapchart_builtin.plot_phase_precession_summary",
+      "position": {
+        "x": 1853.7964138926948,
+        "y": 445.6203034662972
+      },
+      "parameters": {
+        "cell_filter": "pyramidal",
+        "max_scatter_cells": 20,
+        "close_all": false,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "e01",
+      "source_node_id": "n_load_session",
+      "source_port_id": "epochs_info",
+      "target_node_id": "n_select_epoch",
+      "target_port_id": "epochs_info"
+    },
+    {
+      "edge_id": "e02",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_clip_spikes",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e03",
+      "source_node_id": "n_select_epoch",
+      "source_port_id": "time_range",
+      "target_node_id": "n_clip_spikes",
+      "target_port_id": "time_range"
+    },
+    {
+      "edge_id": "e04",
+      "source_node_id": "n_select_epoch",
+      "source_port_id": "time_range",
+      "target_node_id": "n_load_lfp",
+      "target_port_id": "time_range"
+    },
+    {
+      "edge_id": "e05",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_detect_laps",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e06",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_plot_laps",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e07",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_plot_laps",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e08",
+      "source_node_id": "n_load_lfp",
+      "source_port_id": "lfp",
+      "target_node_id": "n_bandpass",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e09",
+      "source_node_id": "n_bandpass",
+      "source_port_id": "filtered",
+      "target_node_id": "n_phase",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e10",
+      "source_node_id": "n_phase",
+      "source_port_id": "phase",
+      "target_node_id": "n_cycles",
+      "target_port_id": "phase"
+    },
+    {
+      "edge_id": "e11",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_bin_spikes",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e12",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_bin_spikes_behav",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e13",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_tuning_dir1",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e14",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning_dir1",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e15",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_tuning_dir1",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e16",
+      "source_node_id": "n_tuning_dir1",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_fields_dir1",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e17",
+      "source_node_id": "n_tuning_dir1",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_plot_tc_dir1",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e18",
+      "source_node_id": "n_fields_dir1",
+      "source_port_id": "place_fields",
+      "target_node_id": "n_plot_tc_dir1",
+      "target_port_id": "place_fields"
+    },
+    {
+      "edge_id": "e19",
+      "source_node_id": "n_bin_spikes",
+      "source_port_id": "spike_matrix",
+      "target_node_id": "n_decode_dir1",
+      "target_port_id": "spike_matrix"
+    },
+    {
+      "edge_id": "e20",
+      "source_node_id": "n_tuning_dir1",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_decode_dir1",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e21",
+      "source_node_id": "n_decode_dir1",
+      "source_port_id": "decoded",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "decoded"
+    },
+    {
+      "edge_id": "e22",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e23",
+      "source_node_id": "n_cycles",
+      "source_port_id": "theta_cycles",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "theta_cycles"
+    },
+    {
+      "edge_id": "e24",
+      "source_node_id": "n_tuning_dir1",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e25",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_seq_dir1",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e26",
+      "source_node_id": "n_seq_dir1",
+      "source_port_id": "theta_sequences",
+      "target_node_id": "n_plot_seq_dir1",
+      "target_port_id": "theta_sequences"
+    },
+    {
+      "edge_id": "e27",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_precession_dir1",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e28",
+      "source_node_id": "n_phase",
+      "source_port_id": "phase",
+      "target_node_id": "n_precession_dir1",
+      "target_port_id": "phase"
+    },
+    {
+      "edge_id": "e29",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_precession_dir1",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e30",
+      "source_node_id": "n_fields_dir1",
+      "source_port_id": "place_fields",
+      "target_node_id": "n_precession_dir1",
+      "target_port_id": "place_fields"
+    },
+    {
+      "edge_id": "e31",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_precession_dir1",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e32",
+      "source_node_id": "n_precession_dir1",
+      "source_port_id": "phase_precession",
+      "target_node_id": "n_plot_pp_dir1",
+      "target_port_id": "phase_precession"
+    },
+    {
+      "edge_id": "e33",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_tuning_dir2",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e34",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning_dir2",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e35",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_tuning_dir2",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e36",
+      "source_node_id": "n_tuning_dir2",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_fields_dir2",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e37",
+      "source_node_id": "n_tuning_dir2",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_plot_tc_dir2",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e38",
+      "source_node_id": "n_fields_dir2",
+      "source_port_id": "place_fields",
+      "target_node_id": "n_plot_tc_dir2",
+      "target_port_id": "place_fields"
+    },
+    {
+      "edge_id": "e39",
+      "source_node_id": "n_bin_spikes",
+      "source_port_id": "spike_matrix",
+      "target_node_id": "n_decode_dir2",
+      "target_port_id": "spike_matrix"
+    },
+    {
+      "edge_id": "e40",
+      "source_node_id": "n_tuning_dir2",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_decode_dir2",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e41",
+      "source_node_id": "n_decode_dir2",
+      "source_port_id": "decoded",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "decoded"
+    },
+    {
+      "edge_id": "e42",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e43",
+      "source_node_id": "n_cycles",
+      "source_port_id": "theta_cycles",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "theta_cycles"
+    },
+    {
+      "edge_id": "e44",
+      "source_node_id": "n_tuning_dir2",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e45",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_seq_dir2",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e46",
+      "source_node_id": "n_seq_dir2",
+      "source_port_id": "theta_sequences",
+      "target_node_id": "n_plot_seq_dir2",
+      "target_port_id": "theta_sequences"
+    },
+    {
+      "edge_id": "e47",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_precession_dir2",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e48",
+      "source_node_id": "n_phase",
+      "source_port_id": "phase",
+      "target_node_id": "n_precession_dir2",
+      "target_port_id": "phase"
+    },
+    {
+      "edge_id": "e49",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_precession_dir2",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e50",
+      "source_node_id": "n_fields_dir2",
+      "source_port_id": "place_fields",
+      "target_node_id": "n_precession_dir2",
+      "target_port_id": "place_fields"
+    },
+    {
+      "edge_id": "e51",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_precession_dir2",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e52",
+      "source_node_id": "n_precession_dir2",
+      "source_port_id": "phase_precession",
+      "target_node_id": "n_plot_pp_dir2",
+      "target_port_id": "phase_precession"
+    },
+    {
+      "edge_id": "e53",
+      "source_node_id": "n_bin_spikes_behav",
+      "source_port_id": "spike_matrix",
+      "target_node_id": "n_decode_behav",
+      "target_port_id": "spike_matrix"
+    },
+    {
+      "edge_id": "e54",
+      "source_node_id": "n_tuning_both",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_decode_behav",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e55",
+      "source_node_id": "n_decode_behav",
+      "source_port_id": "decoded",
+      "target_node_id": "n_plot_behav_decode",
+      "target_port_id": "decoded"
+    },
+    {
+      "edge_id": "e56",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_plot_behav_decode",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e57",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_plot_behav_decode",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e58",
+      "source_node_id": "n_tuning_both",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_plot_behav_decode",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e59",
+      "source_node_id": "n_clip_spikes",
+      "source_port_id": "spike_data_clipped",
+      "target_node_id": "n_tuning_both",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e60",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning_both",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e61",
+      "source_node_id": "n_detect_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_tuning_both",
+      "target_port_id": "laps"
+    }
+  ]
+}

@@ -1,0 +1,310 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    {
+      "id": "synapchart_builtin",
+      "version": "1.0.0",
+      "priority": 1
+    }
+  ],
+  "local_blocks": [],
+  "composite_blocks": [],
+  "nodes": [
+    {
+      "node_id": "load_lfp_001",
+      "block_type_id": "synapchart_builtin.load_npy",
+      "position": {
+        "x": -674.0815956979235,
+        "y": 566.8984190751971
+      },
+      "parameters": {
+        "file_path": "E:\\synapchart\\SynapChart\\scripts\\test1_lfp.npy",
+        "sampling_rate": 1250,
+        "data_type_override": "raw_signal"
+      }
+    },
+    {
+      "node_id": "select_ch_002",
+      "block_type_id": "synapchart_builtin.select_reference_channel",
+      "position": {
+        "x": -464.0003438080369,
+        "y": 560.1715224311392
+      },
+      "parameters": {
+        "channel_index": 0
+      }
+    },
+    {
+      "node_id": "bandpass_003",
+      "block_type_id": "synapchart_builtin.bandpass_filter",
+      "position": {
+        "x": -252.216618397802,
+        "y": 566.8462607038056
+      },
+      "parameters": {
+        "low_hz": 4,
+        "high_hz": 12,
+        "order": 4
+      }
+    },
+    {
+      "node_id": "phase_004",
+      "block_type_id": "synapchart_builtin.extract_phase",
+      "position": {
+        "x": -14.236027856724547,
+        "y": 570.5019331164727
+      },
+      "parameters": {}
+    },
+    {
+      "node_id": "load_spikes_005",
+      "block_type_id": "synapchart_builtin.load_spike_times",
+      "position": {
+        "x": -677.171875439873,
+        "y": -40.41057214795984
+      },
+      "parameters": {
+        "file_path": "E:\\synapchart\\SynapChart\\scripts\\test1_spikes.npy",
+        "unit_index": 0
+      }
+    },
+    {
+      "node_id": "bin_spikes_006",
+      "block_type_id": "synapchart_builtin.bin_spikes",
+      "position": {
+        "x": -139.7040726950304,
+        "y": -170.55756658275496
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "t_start": 0,
+        "t_stop": -1
+      }
+    },
+    {
+      "node_id": "load_pos_008",
+      "block_type_id": "synapchart_builtin.load_position",
+      "position": {
+        "x": -678.5388727464348,
+        "y": 304.03183287869587
+      },
+      "parameters": {
+        "file_path": "E:\\synapchart\\SynapChart\\scripts\\test1_position.npy",
+        "x_col": 1,
+        "y_col": 2,
+        "time_col": 0,
+        "sampling_rate": 30
+      }
+    },
+    {
+      "node_id": "smooth_pos_009",
+      "block_type_id": "synapchart_builtin.smooth_position",
+      "position": {
+        "x": -468.64881163658686,
+        "y": 302.1675571618257
+      },
+      "parameters": {
+        "sigma_seconds": 0.1
+      }
+    },
+    {
+      "node_id": "linear_pos_010",
+      "block_type_id": "synapchart_builtin.linearize_position",
+      "position": {
+        "x": -262.1286482918449,
+        "y": 309.06699464416636
+      },
+      "parameters": {
+        "method": "pca"
+      }
+    },
+    {
+      "node_id": "tuning_curve_011",
+      "block_type_id": "synapchart_builtin.compute_tuning_curve",
+      "position": {
+        "x": 82.23943819724298,
+        "y": 93.68586579310181
+      },
+      "parameters": {
+        "n_bins": 50,
+        "min_occupancy_sec": 0.1,
+        "smooth_sigma": 1.5
+      }
+    },
+    {
+      "node_id": "plot_tuning_012",
+      "block_type_id": "synapchart_builtin.plot_tuning_curve",
+      "position": {
+        "x": 404.6446461719986,
+        "y": 145.1365202010344
+      },
+      "parameters": {
+        "title": "Place field",
+        "x_label": "Position (cm)",
+        "y_label": "Firing rate (Hz)",
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "plot_precession_013",
+      "block_type_id": "synapchart_builtin.plot_phase_precession",
+      "position": {
+        "x": 390.9799651142929,
+        "y": 438.1152896517475
+      },
+      "parameters": {
+        "title": "Theta phase precession",
+        "show_on_run": true,
+        "save_path": "",
+        "position_range": "auto"
+      },
+      "port_order": {
+        "inputs": [
+          "spikes",
+          "position",
+          "phase"
+        ]
+      }
+    },
+    {
+      "node_id": "decoder_014",
+      "block_type_id": "synapchart_builtin.bayesian_decoder",
+      "position": {
+        "x": 378.5308699599925,
+        "y": -145.21928420412831
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "spike_matrix",
+          "tuning_curves"
+        ]
+      }
+    },
+    {
+      "node_id": "plot_decoded_015",
+      "block_type_id": "synapchart_builtin.plot_decoded_posterior",
+      "position": {
+        "x": 699.8405931665044,
+        "y": -42.497942402273495
+      },
+      "parameters": {
+        "title": "Theta sequences (decoded posterior)",
+        "show_on_run": true,
+        "save_path": "",
+        "colormap": "viridis"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "e01",
+      "source_node_id": "load_lfp_001",
+      "source_port_id": "data",
+      "target_node_id": "select_ch_002",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e02",
+      "source_node_id": "select_ch_002",
+      "source_port_id": "channel",
+      "target_node_id": "bandpass_003",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e03",
+      "source_node_id": "bandpass_003",
+      "source_port_id": "filtered",
+      "target_node_id": "phase_004",
+      "target_port_id": "signal"
+    },
+    {
+      "edge_id": "e04",
+      "source_node_id": "load_spikes_005",
+      "source_port_id": "spikes",
+      "target_node_id": "bin_spikes_006",
+      "target_port_id": "spikes"
+    },
+    {
+      "edge_id": "e06",
+      "source_node_id": "load_pos_008",
+      "source_port_id": "position",
+      "target_node_id": "smooth_pos_009",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e07",
+      "source_node_id": "smooth_pos_009",
+      "source_port_id": "position",
+      "target_node_id": "linear_pos_010",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e08",
+      "source_node_id": "load_spikes_005",
+      "source_port_id": "spikes",
+      "target_node_id": "tuning_curve_011",
+      "target_port_id": "spikes"
+    },
+    {
+      "edge_id": "e09",
+      "source_node_id": "linear_pos_010",
+      "source_port_id": "linear_pos",
+      "target_node_id": "tuning_curve_011",
+      "target_port_id": "variable"
+    },
+    {
+      "edge_id": "e10",
+      "source_node_id": "tuning_curve_011",
+      "source_port_id": "tuning_curve",
+      "target_node_id": "plot_tuning_012",
+      "target_port_id": "tuning_curve"
+    },
+    {
+      "edge_id": "e11",
+      "source_node_id": "load_spikes_005",
+      "source_port_id": "spikes",
+      "target_node_id": "plot_precession_013",
+      "target_port_id": "spikes"
+    },
+    {
+      "edge_id": "e12",
+      "source_node_id": "phase_004",
+      "source_port_id": "phase",
+      "target_node_id": "plot_precession_013",
+      "target_port_id": "phase"
+    },
+    {
+      "edge_id": "e13",
+      "source_node_id": "linear_pos_010",
+      "source_port_id": "linear_pos",
+      "target_node_id": "plot_precession_013",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e14",
+      "source_node_id": "bin_spikes_006",
+      "source_port_id": "spike_matrix",
+      "target_node_id": "decoder_014",
+      "target_port_id": "spike_matrix"
+    },
+    {
+      "edge_id": "e15",
+      "source_node_id": "tuning_curve_011",
+      "source_port_id": "tuning_curve",
+      "target_node_id": "decoder_014",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e16",
+      "source_node_id": "decoder_014",
+      "source_port_id": "decoded",
+      "target_node_id": "plot_decoded_015",
+      "target_port_id": "decoded"
+    }
+  ]
+}

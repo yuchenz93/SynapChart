@@ -1,0 +1,10 @@
+{
+  "id": "synapchart_builtin",
+  "name": "Neural Analysis Core",
+  "group": "Electrophysiology Analysis",
+  "version": "1.0.0",
+  "description": "Core blocks shipped with SynapChart: I/O, LFP, spikes, behavior, visualization, flow control.",
+  "author": "SynapChart",
+  "synapchart_min_version": "1.0",
+  "forwarding_aliases": {}
+}

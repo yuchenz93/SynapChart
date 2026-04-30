@@ -1,0 +1,306 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    "synapchart_builtin",
+    "maze1d"
+  ],
+  "local_blocks": [],
+  "composite_blocks": [],
+  "nodes": [
+    {
+      "node_id": "n_load_session",
+      "block_type_id": "synapchart_builtin.load_crcns_session",
+      "position": {
+        "x": -405.86884077528055,
+        "y": 0
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "cell_type_filter": "all",
+        "track_length_cm": 160
+      }
+    },
+    {
+      "node_id": "n_smooth",
+      "block_type_id": "synapchart_builtin.smooth_position",
+      "position": {
+        "x": -141.95270588235292,
+        "y": 287.43282352941185
+      },
+      "parameters": {
+        "sigma_seconds": 0.05
+      }
+    },
+    {
+      "node_id": "n_laps",
+      "block_type_id": "synapchart_builtin.detect_run_laps",
+      "position": {
+        "x": 158.8595859196402,
+        "y": 79.2858588856748
+      },
+      "parameters": {
+        "min_speed_cms": 5,
+        "min_duration_s": 1,
+        "min_distance_cm": 30,
+        "gap_fill_s": 0.2
+      }
+    },
+    {
+      "node_id": "n_states",
+      "block_type_id": "maze1d.define_maze_states",
+      "position": {
+        "x": 352.24546827258143,
+        "y": 86.23540018643621
+      },
+      "parameters": {
+        "session_id": "Achilles_10252013",
+        "min_laps": 3
+      }
+    },
+    {
+      "node_id": "n_tuning",
+      "block_type_id": "maze1d.compute_tuning_curves_1d",
+      "position": {
+        "x": 571.7533960020953,
+        "y": 396.3188439748112
+      },
+      "parameters": {
+        "n_bins": 80,
+        "smooth_sigma": 1.5,
+        "min_occupancy": 0.1,
+        "speed_threshold": 5
+      },
+      "port_order": {
+        "inputs": [
+          "states",
+          "spike_data",
+          "position"
+        ]
+      }
+    },
+    {
+      "node_id": "n_decode",
+      "block_type_id": "maze1d.decode_position_1d",
+      "position": {
+        "x": 765.5215281076876,
+        "y": 12.765232031804345
+      },
+      "parameters": {
+        "bin_size_sec": 0.02,
+        "prior": "uniform"
+      },
+      "port_order": {
+        "inputs": [
+          "spike_data",
+          "states",
+          "position",
+          "tuning_curves"
+        ]
+      }
+    },
+    {
+      "node_id": "n_rest_frames",
+      "block_type_id": "maze1d.detect_waking_rest_frames",
+      "position": {
+        "x": 132.5067928044565,
+        "y": -264.3918985625187
+      },
+      "parameters": {
+        "vel_threshold_cms": 5,
+        "min_stationary_s": 0.5,
+        "lowpass_hz": 0.1,
+        "mua_std_threshold": 2,
+        "min_frame_s": 0.1,
+        "max_frame_s": 1.2,
+        "mua_bin_s": 0.001,
+        "smooth_sigma_s": 0.015,
+        "min_active_cells": 5,
+        "pyr_only": true
+      }
+    },
+    {
+      "node_id": "n_replay",
+      "block_type_id": "maze1d.decode_waking_rest_replay",
+      "position": {
+        "x": 1043.0931199627128,
+        "y": 43.503360198865295
+      },
+      "parameters": {
+        "n_shuffles": 500,
+        "track_length_cm": 160,
+        "min_pos_bins": 5
+      },
+      "port_order": {
+        "inputs": [
+          "rest_frames",
+          "decoded"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_ratio",
+      "block_type_id": "maze1d.plot_replay_ratio",
+      "position": {
+        "x": 1320,
+        "y": -60
+      },
+      "parameters": {
+        "chance_level": 0.05,
+        "show_wc_strip": true,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_plot_examples",
+      "block_type_id": "maze1d.plot_replay_examples",
+      "position": {
+        "x": 1312.5562562222465,
+        "y": 287.189910399649
+      },
+      "parameters": {
+        "min_abs_wc": 0.6,
+        "max_norm_jump": 0.4,
+        "max_examples": 12,
+        "n_cols": 4,
+        "cmap": "afmhot_r",
+        "clim": 0,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "e01",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_smooth",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e02",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_laps",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e03",
+      "source_node_id": "n_laps",
+      "source_port_id": "laps",
+      "target_node_id": "n_states",
+      "target_port_id": "laps"
+    },
+    {
+      "edge_id": "e04",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_tuning",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e05",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_tuning",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e06",
+      "source_node_id": "n_states",
+      "source_port_id": "states",
+      "target_node_id": "n_tuning",
+      "target_port_id": "states"
+    },
+    {
+      "edge_id": "e07",
+      "source_node_id": "n_tuning",
+      "source_port_id": "tuning_curves",
+      "target_node_id": "n_decode",
+      "target_port_id": "tuning_curves"
+    },
+    {
+      "edge_id": "e08",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_decode",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e09",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_decode",
+      "target_port_id": "position",
+      "data": {
+        "cp": {
+          "x": 467.4607647058823,
+          "y": 275.7320882352941
+        }
+      }
+    },
+    {
+      "edge_id": "e10",
+      "source_node_id": "n_states",
+      "source_port_id": "states",
+      "target_node_id": "n_decode",
+      "target_port_id": "states"
+    },
+    {
+      "edge_id": "e11",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_rest_frames",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e12",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_rest_frames",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e13",
+      "source_node_id": "n_decode",
+      "source_port_id": "decoded",
+      "target_node_id": "n_replay",
+      "target_port_id": "decoded"
+    },
+    {
+      "edge_id": "e14",
+      "source_node_id": "n_rest_frames",
+      "source_port_id": "rest_frames",
+      "target_node_id": "n_replay",
+      "target_port_id": "rest_frames",
+      "data": {
+        "cp": {
+          "x": 792.1716862843756,
+          "y": -82.3941520985003
+        }
+      }
+    },
+    {
+      "edge_id": "e15",
+      "source_node_id": "n_replay",
+      "source_port_id": "replay_results",
+      "target_node_id": "n_plot_ratio",
+      "target_port_id": "replay_results"
+    },
+    {
+      "edge_id": "e16",
+      "source_node_id": "n_replay",
+      "source_port_id": "replay_results",
+      "target_node_id": "n_plot_examples",
+      "target_port_id": "replay_results"
+    },
+    {
+      "edge_id": "e17",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_plot_examples",
+      "target_port_id": "position"
+    }
+  ]
+}

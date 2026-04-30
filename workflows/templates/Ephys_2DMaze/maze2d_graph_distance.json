@@ -1,0 +1,493 @@
+{
+  "schema_version": "2.0",
+  "libraries": [
+    "synapchart_builtin",
+    "maze1d",
+    "maze2d"
+  ],
+  "local_blocks": [],
+  "composite_blocks": [],
+  "nodes": [
+    {
+      "node_id": "n_load_session",
+      "block_type_id": "synapchart_builtin.load_crcns_session",
+      "position": {
+        "x": -612.1031536348992,
+        "y": -69.69239326958214
+      },
+      "parameters": {
+        "session_path": "E:/synapchart/SynapChart/testdata_crcns_hc11/Achilles_10252013",
+        "cell_type_filter": "all",
+        "track_length_cm": 160
+      },
+      "port_order": {
+        "outputs": [
+          "spike_data",
+          "epochs_info",
+          "position"
+        ]
+      }
+    },
+    {
+      "node_id": "n_smooth",
+      "block_type_id": "synapchart_builtin.smooth_position",
+      "position": {
+        "x": -328.4619663479107,
+        "y": 264.51317233050435
+      },
+      "parameters": {
+        "sigma_seconds": 0.05
+      }
+    },
+    {
+      "node_id": "n_rest_frames",
+      "block_type_id": "maze1d.detect_waking_rest_frames",
+      "position": {
+        "x": 65.36626254805435,
+        "y": 282.2004800783488
+      },
+      "parameters": {
+        "vel_threshold_cms": 5,
+        "min_stationary_s": 0.5,
+        "lowpass_hz": 0.1,
+        "mua_std_threshold": 2,
+        "min_frame_s": 0.1,
+        "max_frame_s": 1.2,
+        "mua_bin_s": 0.001,
+        "smooth_sigma_s": 0.015,
+        "min_active_cells": 5,
+        "pyr_only": true
+      }
+    },
+    {
+      "node_id": "n_define_polygon",
+      "block_type_id": "maze2d.define_track_polygon_2d",
+      "position": {
+        "x": -327.83486765484156,
+        "y": -362.61680269940234
+      },
+      "parameters": {
+        "polygon_json": "",
+        "point_size": 0.5,
+        "point_alpha": 0.2,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_place_maps",
+      "block_type_id": "maze2d.compute_place_maps_2d",
+      "position": {
+        "x": 86.78531981201468,
+        "y": -332.03629530025245
+      },
+      "parameters": {
+        "epoch_name": "MazeEpoch",
+        "max_speed_cms": 150,
+        "bin_size_cm": 6,
+        "speed_threshold_cms": 4,
+        "smooth_sigma_bins": 1,
+        "min_occupancy_s": 0.05,
+        "pyr_only": true
+      },
+      "port_order": {
+        "inputs": [
+          "track_polygon",
+          "spike_data",
+          "epochs_info",
+          "position"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_place_maps",
+      "block_type_id": "maze2d.plot_place_maps_2d",
+      "position": {
+        "x": 441.676971494711,
+        "y": -478.2121967128145
+      },
+      "parameters": {
+        "n_examples": 25,
+        "n_cols": 5,
+        "cmap": "hot_r",
+        "show_valid": true,
+        "show_on_run": true,
+        "save_path": ""
+      }
+    },
+    {
+      "node_id": "n_maze_graph",
+      "block_type_id": "maze2d.build_maze_graph_2d",
+      "position": {
+        "x": 784.9137478079222,
+        "y": -259.74206815722334
+      },
+      "parameters": {
+        "connectivity": 8
+      }
+    },
+    {
+      "node_id": "n_run_neural_dist",
+      "block_type_id": "maze2d.compute_run_neural_dist",
+      "position": {
+        "x": 1075.6338114486891,
+        "y": -552.6431357950042
+      },
+      "parameters": {
+        "gamma": 2,
+        "zscore_floor": 0.2,
+        "large_weight": 1000000
+      },
+      "port_order": {
+        "inputs": [
+          "place_maps_2d",
+          "maze_graph_2d"
+        ]
+      }
+    },
+    {
+      "node_id": "n_decode_rest_2d",
+      "block_type_id": "maze2d.decode_rest_frames_2d",
+      "position": {
+        "x": 418.11994228499907,
+        "y": -11.820409143461717
+      },
+      "parameters": {
+        "bin_size_sec": 0.04,
+        "overlap": 0.5,
+        "min_n_bins": 5
+      },
+      "port_order": {
+        "inputs": [
+          "place_maps_2d",
+          "spike_data",
+          "rest_frames"
+        ]
+      }
+    },
+    {
+      "node_id": "n_rest_neural_dist",
+      "block_type_id": "maze2d.compute_rest_neural_dist",
+      "position": {
+        "x": 1076.1590390876402,
+        "y": 244.24307454849816
+      },
+      "parameters": {
+        "gamma": 4,
+        "large_weight": 1000000
+      },
+      "port_order": {
+        "inputs": [
+          "maze_graph_2d",
+          "decoded_2d_rest"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_scatter",
+      "block_type_id": "maze2d.plot_neural_vs_maze_dist",
+      "position": {
+        "x": 1590.6650582028733,
+        "y": -207.10690734195657
+      },
+      "parameters": {
+        "alpha": 0.3,
+        "dot_size": 3,
+        "show_on_run": true,
+        "save_path": ""
+      },
+      "port_order": {
+        "inputs": [
+          "neural_dist_run",
+          "maze_graph_2d",
+          "neural_dist_rest"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_heatmap",
+      "block_type_id": "maze2d.plot_dist_from_point_2d",
+      "position": {
+        "x": 1586.1725864891662,
+        "y": -509.5729959161931
+      },
+      "parameters": {
+        "ref_bin_idx": -1,
+        "random_seed": 42,
+        "cmap": "viridis",
+        "show_on_run": true,
+        "save_path": ""
+      },
+      "port_order": {
+        "inputs": [
+          "neural_dist_run",
+          "maze_graph_2d",
+          "neural_dist_rest"
+        ]
+      }
+    },
+    {
+      "node_id": "n_plot_replay_2d",
+      "block_type_id": "maze2d.plot_replay_examples_2d",
+      "position": {
+        "x": 737.6992046286005,
+        "y": -72.0340383174169
+      },
+      "parameters": {
+        "n_examples": 8,
+        "n_cols": 4,
+        "max_jump_cm": 50,
+        "pbclim": 0.1,
+        "show_on_run": true,
+        "save_path": ""
+      },
+      "port_order": {
+        "inputs": [
+          "place_maps_2d",
+          "decoded_2d_rest"
+        ]
+      }
+    },
+    {
+      "node_id": "n_transition_prob",
+      "block_type_id": "maze2d.plot_transition_prob_2d",
+      "position": {
+        "x": 1579.921725100094,
+        "y": 286.2859464072809
+      },
+      "parameters": {
+        "ref_x_cm": 0,
+        "ref_y_cm": -10,
+        "vmax": 0.02,
+        "cmap": "rainbow",
+        "show_on_run": true,
+        "save_path": ""
+      },
+      "port_order": {
+        "inputs": [
+          "neural_dist_rest"
+        ]
+      }
+    },
+    {
+      "node_id": "n_nodes_edges",
+      "block_type_id": "maze2d.plot_nodes_edges_2d",
+      "position": {
+        "x": 1600.8981554356965,
+        "y": 67.4316543799714
+      },
+      "parameters": {
+        "ref_x_cm": 40,
+        "ref_y_cm": -10,
+        "zoom_radius_cm": 130,
+        "weight_min": 1,
+        "weight_max": 200,
+        "max_edges": 800,
+        "show_on_run": true,
+        "save_path": ""
+      },
+      "port_order": {
+        "inputs": [
+          "neural_dist_rest"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "e01",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_smooth",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e11",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_rest_frames",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e12",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_rest_frames",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e14b",
+      "source_node_id": "n_load_session",
+      "source_port_id": "position",
+      "target_node_id": "n_define_polygon",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e14c",
+      "source_node_id": "n_define_polygon",
+      "source_port_id": "track_polygon",
+      "target_node_id": "n_place_maps",
+      "target_port_id": "track_polygon"
+    },
+    {
+      "edge_id": "e15",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_place_maps",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e16",
+      "source_node_id": "n_smooth",
+      "source_port_id": "position",
+      "target_node_id": "n_place_maps",
+      "target_port_id": "position"
+    },
+    {
+      "edge_id": "e16b",
+      "source_node_id": "n_load_session",
+      "source_port_id": "epochs_info",
+      "target_node_id": "n_place_maps",
+      "target_port_id": "epochs_info"
+    },
+    {
+      "edge_id": "e16c",
+      "source_node_id": "n_place_maps",
+      "source_port_id": "place_maps_2d",
+      "target_node_id": "n_plot_place_maps",
+      "target_port_id": "place_maps_2d"
+    },
+    {
+      "edge_id": "e17",
+      "source_node_id": "n_place_maps",
+      "source_port_id": "place_maps_2d",
+      "target_node_id": "n_maze_graph",
+      "target_port_id": "place_maps_2d"
+    },
+    {
+      "edge_id": "e18",
+      "source_node_id": "n_place_maps",
+      "source_port_id": "place_maps_2d",
+      "target_node_id": "n_run_neural_dist",
+      "target_port_id": "place_maps_2d"
+    },
+    {
+      "edge_id": "e19",
+      "source_node_id": "n_maze_graph",
+      "source_port_id": "maze_graph_2d",
+      "target_node_id": "n_run_neural_dist",
+      "target_port_id": "maze_graph_2d"
+    },
+    {
+      "edge_id": "e20",
+      "source_node_id": "n_rest_frames",
+      "source_port_id": "rest_frames",
+      "target_node_id": "n_decode_rest_2d",
+      "target_port_id": "rest_frames"
+    },
+    {
+      "edge_id": "e21",
+      "source_node_id": "n_place_maps",
+      "source_port_id": "place_maps_2d",
+      "target_node_id": "n_decode_rest_2d",
+      "target_port_id": "place_maps_2d"
+    },
+    {
+      "edge_id": "e22",
+      "source_node_id": "n_load_session",
+      "source_port_id": "spike_data",
+      "target_node_id": "n_decode_rest_2d",
+      "target_port_id": "spike_data"
+    },
+    {
+      "edge_id": "e23",
+      "source_node_id": "n_decode_rest_2d",
+      "source_port_id": "decoded_2d_rest",
+      "target_node_id": "n_rest_neural_dist",
+      "target_port_id": "decoded_2d_rest"
+    },
+    {
+      "edge_id": "e24",
+      "source_node_id": "n_maze_graph",
+      "source_port_id": "maze_graph_2d",
+      "target_node_id": "n_rest_neural_dist",
+      "target_port_id": "maze_graph_2d"
+    },
+    {
+      "edge_id": "e25",
+      "source_node_id": "n_maze_graph",
+      "source_port_id": "maze_graph_2d",
+      "target_node_id": "n_plot_scatter",
+      "target_port_id": "maze_graph_2d"
+    },
+    {
+      "edge_id": "e26",
+      "source_node_id": "n_run_neural_dist",
+      "source_port_id": "neural_dist_run",
+      "target_node_id": "n_plot_scatter",
+      "target_port_id": "neural_dist_run"
+    },
+    {
+      "edge_id": "e27",
+      "source_node_id": "n_rest_neural_dist",
+      "source_port_id": "neural_dist_rest",
+      "target_node_id": "n_plot_scatter",
+      "target_port_id": "neural_dist_rest"
+    },
+    {
+      "edge_id": "e28",
+      "source_node_id": "n_maze_graph",
+      "source_port_id": "maze_graph_2d",
+      "target_node_id": "n_plot_heatmap",
+      "target_port_id": "maze_graph_2d"
+    },
+    {
+      "edge_id": "e29",
+      "source_node_id": "n_run_neural_dist",
+      "source_port_id": "neural_dist_run",
+      "target_node_id": "n_plot_heatmap",
+      "target_port_id": "neural_dist_run"
+    },
+    {
+      "edge_id": "e30",
+      "source_node_id": "n_rest_neural_dist",
+      "source_port_id": "neural_dist_rest",
+      "target_node_id": "n_plot_heatmap",
+      "target_port_id": "neural_dist_rest"
+    },
+    {
+      "edge_id": "e31",
+      "source_node_id": "n_decode_rest_2d",
+      "source_port_id": "decoded_2d_rest",
+      "target_node_id": "n_plot_replay_2d",
+      "target_port_id": "decoded_2d_rest"
+    },
+    {
+      "edge_id": "e32",
+      "source_node_id": "n_place_maps",
+      "source_port_id": "place_maps_2d",
+      "target_node_id": "n_plot_replay_2d",
+      "target_port_id": "place_maps_2d",
+      "data": {
+        "cp": {
+          "x": 494.44174378837056,
+          "y": -136.9603244776019
+        }
+      }
+    },
+    {
+      "edge_id": "e33",
+      "source_node_id": "n_rest_neural_dist",
+      "source_port_id": "neural_dist_rest",
+      "target_node_id": "n_transition_prob",
+      "target_port_id": "neural_dist_rest"
+    },
+    {
+      "edge_id": "e34",
+      "source_node_id": "n_rest_neural_dist",
+      "source_port_id": "neural_dist_rest",
+      "target_node_id": "n_nodes_edges",
+      "target_port_id": "neural_dist_rest"
+    }
+  ]
+}

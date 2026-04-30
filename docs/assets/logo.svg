@@ -1,0 +1,42 @@
+<svg width="100%" viewBox="185 50 235 100" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>SynapChart logo</title>
+<desc>SynapChart logo — pyramidal neuron pipeline</desc>
+
+<style>
+  .soma     { fill: white; stroke: none; }
+  .edge     { fill: none; stroke: white; stroke-width: 3.5; }
+  .synapse  { stroke: white; stroke-width: 5; stroke-linecap: round; }
+</style>
+
+<!-- NODE 1 -->
+<polygon class="soma" points="188,82 188,118 222,100"/>
+
+<!-- axon → split -->
+<line class="edge" x1="222" y1="100" x2="242" y2="100"/>
+<line class="edge" x1="242" y1="64"  x2="242" y2="136"/>
+
+<!-- to node 2a -->
+<line class="edge" x1="242" y1="64"  x2="278" y2="64"/>
+<line class="synapse" x1="278" y1="50" x2="278" y2="78"/>
+
+<!-- to node 2b -->
+<line class="edge" x1="242" y1="136" x2="278" y2="136"/>
+<line class="synapse" x1="278" y1="122" x2="278" y2="150"/>
+
+<!-- NODE 2a -->
+<polygon class="soma" points="284,48 284,80 318,64"/>
+
+<!-- NODE 2b -->
+<polygon class="soma" points="284,120 284,152 318,136"/>
+
+<!-- converge -->
+<line class="edge" x1="318" y1="64"  x2="362" y2="64"/>
+<line class="edge" x1="318" y1="136" x2="362" y2="136"/>
+<line class="edge" x1="362" y1="64"  x2="362" y2="136"/>
+<line class="edge" x1="362" y1="100" x2="388" y2="100"/>
+<line class="synapse" x1="388" y1="86" x2="388" y2="114"/>
+
+<!-- NODE 3 -->
+<polygon class="soma" points="394,82 394,118 428,100"/>
+
+</svg>

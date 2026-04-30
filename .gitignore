@@ -1,0 +1,47 @@
+# Compiled frontend — always regenerated from source, never committed
+backend/static/
+
+# Python build artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+.synapchart_cache/
+*/.synapchart_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+test_env/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# test data set and code
+testdata_crcns_hc11/
+codetemp/
+
+# md docs
+docs/requests/
+docs/progress/
+docs/bugs/
+docs/specs/
+
+# claude related
+.claude/
+

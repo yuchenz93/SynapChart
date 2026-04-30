@@ -1,0 +1,10 @@
+{
+  "id": "maze1d",
+  "name": "1D Maze Analysis",
+  "group": "Electrophysiology Analysis",
+  "version": "0.1.0",
+  "description": "State-aware analysis blocks for 1D linear maze experiments. Defines named states (session × direction) so every analysis block iterates over all states automatically, keeping the workflow flat regardless of how many sessions or conditions are analysed.",
+  "author": "SynapChart",
+  "synapchart_min_version": "0.1.0",
+  "forwarding_aliases": {}
+}

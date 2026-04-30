@@ -1,0 +1,10 @@
+{
+  "id": "maze2d",
+  "name": "2D Maze Graph Analysis",
+  "group": "Electrophysiology Analysis",
+  "version": "0.1.0",
+  "description": "Graph-theory-based 2D maze representation blocks. Computes 2D place maps, maze topology graphs, and run/waking-rest neuronal distance matrices; compares neuronal distance to actual path distance.",
+  "author": "SynapChart",
+  "synapchart_min_version": "0.1.0",
+  "forwarding_aliases": {}
+}

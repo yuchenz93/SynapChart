@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=42", "setuptools-scm>=6"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "synapchart"
+dynamic = ["version"]
+description = "Visual pipeline builder for neuroscience data analysis"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "Your Name", email = "you@example.com" }
+]
+keywords = ["neuroscience", "EEG", "LFP", "spike", "pipeline", "visualization"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "numpy>=1.24",
+    "scipy>=1.11",
+    "matplotlib>=3.7",
+    "websockets>=12.0",
+    "pydantic>=2.0",
+    "click>=8.1",
+    "h5py>=3.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/synapchart"
+Documentation = "https://github.com/your-org/synapchart/wiki"
+Issues = "https://github.com/your-org/synapchart/issues"
+
+[project.scripts]
+synapchart = "backend.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+
+[tool.setuptools.package-data]
+"backend" = ["static/**/*", "blocks/**/*.py", "workflows/templates/*.json"]
+
+[tool.setuptools_scm]
+# Version is derived automatically from git tags (e.g. tag v0.1.0 → version 0.1.0)
+# fallback_version is used when there is no git repo or no tags yet (e.g. during dev).
+fallback_version = "0.1.0.dev0"

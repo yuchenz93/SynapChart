@@ -31,6 +31,10 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+validation:
+  links:
+    not_found: ignore   # screenshots not added yet; remove once images are in place
+
 markdown_extensions:
   - admonition
   - pymdownx.details
@@ -44,6 +48,9 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Tutorials:
+      - "Tutorial 1: Theta Phase Precession": tutorials/tutorial1.md
+      - "Tutorial 2: Batch Processing with the Dataset Iterator": tutorials/tutorial2.md
   - Block Reference:
       - Overview: blocks/index.md
       - NeuroData: neurodata.md

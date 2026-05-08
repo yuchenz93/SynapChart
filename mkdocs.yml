@@ -49,6 +49,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Tutorials:
+      - Overview: tutorials/index.md
       - "Tutorial 1: Theta Phase Precession": tutorials/tutorial1.md
       - "Tutorial 2: Batch Processing with the Dataset Iterator": tutorials/tutorial2.md
   - Block Reference:

@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from api import pipeline, blocks, files, libraries
+from api import pipeline, blocks, files, libraries, debug
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -18,8 +18,8 @@ STATIC_DIR = Path(__file__).parent / "static"
 async def lifespan(app: FastAPI):
     from core.library_registry import discover_all_libraries
     from core.checkpoint import clear_cache
+    clear_cache()   # wipe stale checkpoints before blocks are registered
     discover_all_libraries()
-    clear_cache()   # wipe stale checkpoints on every startup
     yield
 
 
@@ -36,6 +36,7 @@ app.include_router(pipeline.router,  prefix="/api/pipeline")
 app.include_router(blocks.router,    prefix="/api/blocks")
 app.include_router(files.router,     prefix="/api/files")
 app.include_router(libraries.router, prefix="/api/libraries")
+app.include_router(debug.router,     prefix="/api/debug")
 
 # --- Serve the compiled React frontend ---
 # Only active after `npm run build` has populated backend/static/.

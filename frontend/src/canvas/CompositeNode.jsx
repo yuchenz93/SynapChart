@@ -31,9 +31,11 @@ const STATUS_STYLES = {
  * @param {object} props.data - { block_type_id, parameters, definition?, onDrillIn? }
  */
 export default function CompositeNode({ id, data }) {
-  const nodeStatuses    = usePipelineStore(s => s.nodeStatuses);
-  const compositeBlocks = usePipelineStore(s => s.compositeBlocks);
-  const edges           = usePipelineStore(s => s.edges);
+  const nodeStatuses      = usePipelineStore(s => s.nodeStatuses);
+  const compositeBlocks   = usePipelineStore(s => s.compositeBlocks);
+  const edges             = usePipelineStore(s => s.edges);
+  const breakpointNodeIds = usePipelineStore(s => s.breakpointNodeIds);
+  const hasBreakpoint     = breakpointNodeIds.has(id);
 
   const ctx = useContext(CanvasContext);
   const pending         = ctx?.pendingConnection ?? null;
@@ -127,6 +129,14 @@ export default function CompositeNode({ id, data }) {
           flexShrink: 0, letterSpacing: 0,
         }}>⊞</span>
         <span style={{ flex: 1 }}>{displayName}</span>
+        {hasBreakpoint && (
+          <div title="Breakpoint set" style={{
+            width: 10, height: 10, borderRadius: '50%',
+            backgroundColor: '#ef4444',
+            boxShadow: '0 0 0 2px #fff',
+            flexShrink: 0,
+          }} />
+        )}
         <span title="Composite block" style={{
           fontSize: 9, lineHeight: '14px', padding: '0 4px',
           background: 'rgba(0,0,0,0.35)', borderRadius: 3,

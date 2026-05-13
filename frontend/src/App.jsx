@@ -8,7 +8,7 @@ import VizWindow from './modals/VizWindow';
 import RunProgress from './panels/RunProgress';
 import ConsolePanel from './panels/ConsolePanel';
 import usePipelineStore from './store/pipelineStore';
-import { getBlocks, openLogsSocket } from './api/client';
+import { getBlocks, openLogsSocket, getWorkspaceNode, clearCache } from './api/client';
 
 /** Resolve a node ID to its display name using current store state. */
 function getNodeName(nodeId) {
@@ -23,10 +23,16 @@ function getNodeName(nodeId) {
 
 /** Root application component. Bootstraps the block library and lays out the UI. */
 export default function App() {
-  const { setBlockLibrary, missingLibraries, clearLoadWarnings } = usePipelineStore(s => ({
-    setBlockLibrary:  s.setBlockLibrary,
-    missingLibraries: s.missingLibraries,
-    clearLoadWarnings: s.clearLoadWarnings,
+  const {
+    setBlockLibrary, missingLibraries, clearLoadWarnings,
+    setPaused, setWorkspaceNodeData, setActiveConsoleTab,
+  } = usePipelineStore(s => ({
+    setBlockLibrary:      s.setBlockLibrary,
+    missingLibraries:     s.missingLibraries,
+    clearLoadWarnings:    s.clearLoadWarnings,
+    setPaused:            s.setPaused,
+    setWorkspaceNodeData: s.setWorkspaceNodeData,
+    setActiveConsoleTab:  s.setActiveConsoleTab,
   }));
 
   const [showMissingBanner, setShowMissingBanner] = useState(false);
@@ -43,6 +49,13 @@ export default function App() {
       .catch(err => console.error('Failed to load block library:', err));
   }, [setBlockLibrary]);
 
+  // Clear cache when the tab/window is closed
+  useEffect(() => {
+    const handler = () => { clearCache().catch(() => {}); };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+
   // WebSocket: connect once and reconnect if dropped.
   const wsRef = useRef(null);
   useEffect(() => {
@@ -50,8 +63,22 @@ export default function App() {
 
     const connect = () => {
       if (cancelled) return;
-      const ws = openLogsSocket((msg) => {
+      const ws = openLogsSocket(async (msg) => {
         const store = usePipelineStore.getState();
+
+        // Breakpoint hit: switch to Workspace tab and fetch variable summaries
+        if (msg.status === 'breakpoint_hit') {
+          setActiveConsoleTab('workspace');
+          setPaused(true, msg.node_id);
+          const completedNodes = msg.completed_nodes ?? [];
+          for (const nid of completedNodes) {
+            try {
+              const data = await getWorkspaceNode(nid);
+              if (data.variables) setWorkspaceNodeData(nid, data.variables);
+            } catch { /* ignore fetch errors */ }
+          }
+          return;
+        }
 
         if (msg.status === 'plan' && Array.isArray(msg.order)) {
           const initial = {};
@@ -104,6 +131,7 @@ export default function App() {
 
         if (!msg.node_id && msg.status && ['done', 'error', 'stopped'].includes(msg.status)) {
           store.setRunStatus(msg.status);
+          setPaused(false, null);
           if (msg.status === 'done') {
             store.addConsoleMessage({ type: 'success', text: 'Pipeline complete' });
           } else if (msg.status === 'stopped') {

@@ -15,18 +15,22 @@ Outputs three dataset sets in ``out-dir`` (default: ``scripts/``):
 Phase-precession property
 -------------------------
 Spikes fired while the animal is inside the place field show a clear
-negative linear relationship between their theta phase and the animal's
-normalised position within the field:
+negative linear relationship between their Hilbert-extracted theta phase
+and the animal's normalised position within the field.
 
-    phase ≈ 360° at field entry  (normalised position = 0)
-    phase ≈   0° at field exit   (normalised position = 1)
+The LFP is sin(φ_lfp); the Hilbert-extracted phase is φ_lfp − π/2.
+To make the extracted phase decrease linearly from +π/2 to −π/2 across
+the field we use a *half-cycle* precession model:
 
-The full precession slope spans one complete theta cycle (360° peak-to-peak).
-Noise is added via a von Mises distribution (concentration κ): larger κ
-gives tighter phase clustering and a cleaner scatter plot.  The three
-datasets share the same core mechanism but differ in field width, peak
-firing rate, and noise level so they produce visibly distinct scatter
-plots while all exhibiting robust precession.
+    φ_pref(u) = π · (1 − u)      (u = normalised field position ∈ [0, 1])
+
+    u = 0  (entry): φ_pref = π   → extracted phase ≈ +π/2
+    u = 0.5 (mid):  φ_pref = π/2 → extracted phase ≈  0
+    u = 1  (exit):  φ_pref = 0   → extracted phase ≈ −π/2
+
+Von Mises modulation is applied **only inside the field**; spikes outside
+the field fire at a uniform phase so they do not create artefact clusters.
+Noise is controlled by κ: larger κ → tighter phase coupling → cleaner plot.
 
 File format notes (compatible with the SynapChart theta-precession template)
 -----------------------------------------------------------------------------
@@ -67,9 +71,9 @@ RUN_SPEED =   20.0    # cm/s – mean running speed (sinusoidal trajectory)
 #
 DATASET_PROFILES = [
     # label  centre  sigma  peak_hz  kappa  lfp_noise  seed
-    ("1",     40,     15,    12.0,    5.0,    0.12,    101),  # clean, tight precession
-    ("2",     55,     18,    10.0,    3.0,    0.20,    202),  # wider field, more noise
-    ("3",     50,     13,    15.0,    2.0,    0.30,    303),  # narrow field, most noise
+    ("1",     40,     15,    12.0,    8.0,    0.12,    101),  # clean, tight precession
+    ("2",     55,     18,    10.0,    5.0,    0.20,    202),  # wider field, more noise
+    ("3",     50,     13,    15.0,    3.5,    0.30,    303),  # narrow field, most noise
 ]
 
 
@@ -155,42 +159,49 @@ def generate_dataset(
     place_rate = peak_rate_hz * np.exp(
         -0.5 * ((x_at_lfp - field_centre_cm) / field_sigma_cm) ** 2
     )
-    baseline_rate = 0.03   # Hz – minimal background spiking outside the field
+    baseline_rate = 0.01   # Hz – minimal background spiking outside the field
     inst_rate_base = place_rate + baseline_rate
 
     # 3b. Phase precession via von Mises modulation.
     #
-    # The preferred spike phase decreases linearly with the animal's normalised
-    # position within the field (u ∈ [0, 1]):
+    # We use a *half-cycle* precession model so that the Hilbert-extracted phase
+    # (= φ_lfp − π/2) decreases linearly across the field:
     #
-    #   φ_pref(u) = 2π·(1 − u)      [radians]
-    #             = 360° · (1 − u)   [degrees]
+    #   φ_pref(u) = π · (1 − u)      [radians]
     #
-    # At field entry  (u = 0): φ_pref = 2π  ≡ 360°  (late in theta cycle)
-    # At field center (u = 0.5): φ_pref = π ≡ 180°
-    # At field exit   (u = 1): φ_pref = 0°           (early in theta cycle)
+    # At field entry  (u = 0):   φ_pref = π   → Hilbert phase ≈ +π/2
+    # At field center (u = 0.5): φ_pref = π/2 → Hilbert phase ≈  0
+    # At field exit   (u = 1):   φ_pref = 0   → Hilbert phase ≈ −π/2
     #
-    # This yields a negative slope of −360° across the field (one full theta
-    # cycle), matching the classic phase-precession observation.
+    # A full-cycle model (2π → 0) maps to a U-shape in Hilbert space
+    # (−π/2 → +π/2 → −π/2) and gives r ≈ 0, so we use half-cycle instead.
+    #
+    # Phase modulation is applied ONLY inside the field; outside the field
+    # spikes fire at a uniform (unmodulated) rate to avoid artefact clusters.
     #
     # Normalised position is measured relative to the ±2σ field boundaries.
     field_lo = field_centre_cm - 2.0 * field_sigma_cm
     field_hi = field_centre_cm + 2.0 * field_sigma_cm
+    in_field = (x_at_lfp >= field_lo) & (x_at_lfp <= field_hi)
+
     u = np.clip(
         (x_at_lfp - field_lo) / (field_hi - field_lo),
         0.0, 1.0,
     )                                           # (N,)  in [0, 1]
 
-    phi_pref = 2.0 * np.pi * (1.0 - u)        # (N,)  decreases from 2π to 0
+    phi_pref = np.pi * (1.0 - u)               # (N,)  half-cycle: π → 0
 
     # Von Mises probability density, normalised to have mean = 1 over a cycle.
     #   p(φ | φ_pref, κ) ∝ exp(κ · cos(φ − φ_pref))
     #   Mean over uniform φ = I₀(κ), so divide to get mean = 1.
     phi_wrapped = phi_lfp % (2.0 * np.pi)      # current LFP phase in [0, 2π)
-    phase_mod   = (
+    von_mises_mod = (
         np.exp(kappa * np.cos(phi_wrapped - phi_pref))
         / _bessel_i0_approx(kappa)
     )                                           # (N,)  mean ≈ 1 over a cycle
+
+    # Apply phase modulation only inside the field; outside = uniform phase.
+    phase_mod = np.where(in_field, von_mises_mod, 1.0)
 
     # Instantaneous rate at each LFP sample (Hz), clipped for numerical safety.
     inst_rate = inst_rate_base * phase_mod      # Hz
@@ -257,7 +268,7 @@ def main() -> None:
         f"  LFP:      {SR_LFP} Hz, {DURATION:.0f} s, single channel\n"
         f"  Theta:    {THETA_HZ} Hz\n"
         f"  Track:    0 - {TRACK_CM:.0f} cm (1-D), speed ~{RUN_SPEED} cm/s\n"
-        f"  Precession slope: -360 deg across each place field\n"
+        f"  Precession slope: -180 deg (half-cycle) across each place field\n"
     )
 
     for profile in DATASET_PROFILES:
@@ -282,7 +293,7 @@ def main() -> None:
         "  load_position    <- phase_precession_N_position.npy\n\n"
         "Expected output:\n"
         "  - Place-field tuning curve  (Gaussian peak)\n"
-        "  - Phase-precession scatter  (negative slope, ~-360 deg across field)\n"
+        "  - Phase-precession scatter  (negative slope, ~-180 deg across field)\n"
         "  - Bayesian decoded posterior (theta-sequence structure)\n"
     )
 

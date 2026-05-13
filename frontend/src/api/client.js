@@ -79,6 +79,28 @@ export const extractBlock    = (packedWorkflowPath, blockTypeId, targetLibraryId
     target_library_id: targetLibraryId,
   }).then(r => r.data);
 
+// Debug / workspace endpoints
+export const setBreakpoint = (nodeId) =>
+  axios.post(`${BASE}/api/debug/breakpoint/set`, null, { params: { node_id: nodeId } });
+
+export const clearBreakpoint = (nodeId) =>
+  axios.post(`${BASE}/api/debug/breakpoint/clear`, null, { params: { node_id: nodeId } });
+
+export const clearAllBreakpoints = () =>
+  axios.post(`${BASE}/api/debug/breakpoint/clear-all`);
+
+export const continueExecution = () =>
+  axios.post(`${BASE}/api/debug/continue`);
+
+export const getWorkspaceNode = (nodeId) =>
+  axios.get(`${BASE}/api/debug/workspace/${nodeId}`).then(r => r.data);
+
+export const getVariableDetail = (nodeId, portId) =>
+  axios.get(`${BASE}/api/debug/workspace/${nodeId}/${portId}/detail`).then(r => r.data);
+
+export const getVariablePreview = (nodeId, portId) =>
+  axios.get(`${BASE}/api/debug/workspace/${nodeId}/${portId}/preview`).then(r => r.data);
+
 export const openLogsSocket = (onMessage) => {
   const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${proto}://${window.location.host}/api/pipeline/logs`);

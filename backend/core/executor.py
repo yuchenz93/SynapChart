@@ -7,6 +7,7 @@ import asyncio
 import builtins
 import contextvars
 import csv
+import hashlib
 import importlib.util
 import json
 import queue
@@ -19,7 +20,49 @@ from core.graph import topological_sort, build_downstream_map, all_descendants
 from core.checkpoint import _make_key, has_cache, load_cache, save_cache
 from core.block_registry import get_block
 from core.validator import validate_workflow
+from core.breakpoints import has_breakpoint
 from blocks.base import CompositeBlockDefinition
+
+# ── Debugger: module-level state (must stay module-level for Tier 2 compat) ───
+
+# Event cleared when the executor is paused at a breakpoint; set to resume.
+_continue_event: asyncio.Event = asyncio.Event()
+_continue_event.set()   # starts in "not paused" state
+
+# node_id -> cache_key, populated during execution; read by the debug API.
+_session_cache_keys: dict[str, str] = {}
+
+
+def signal_continue() -> None:
+    """Called by POST /api/debug/continue to resume a paused pipeline."""
+    _continue_event.set()
+
+
+def _compute_source_hash(block) -> str:
+    """Return an 8-char hex digest that changes when the block implementation changes.
+
+    - Custom blocks (exec'd from user source):  MD5 of _source_code
+    - Composite blocks (subflow definition):     MD5 of serialised subflow JSON
+    - Built-in blocks (shipped with the package): MD5 of the installed version string
+    """
+    if isinstance(block, CompositeBlockDefinition):
+        subflow = block.full_definition().get("subflow", {})
+        digest = hashlib.md5(
+            json.dumps(subflow, sort_keys=True).encode()
+        ).hexdigest()
+        return digest[:8]
+
+    src = getattr(block, "_source_code", None)
+    if src is not None:
+        return hashlib.md5(src.encode()).hexdigest()[:8]
+
+    # Built-in block — use the installed package version as a proxy.
+    try:
+        from importlib.metadata import version as _pkg_version
+        ver = _pkg_version("synapchart")
+    except Exception:
+        ver = "builtin"
+    return hashlib.md5(ver.encode()).hexdigest()[:8]
 
 
 def _log(level: str, node_id: str | None, message: str, status: str | None = None, **extra) -> dict:
@@ -80,10 +123,11 @@ def detect_iterator_structure(
             collect_node_ids  — ids of all collect_results nodes in the loop
             post_loop_nodes   — ordered list of node_ids that run after the loop
     """
-    # Find the iterator node
+    # Find the iterator node (match bare or namespaced block_type_id)
     iterator_node_id: str | None = None
     for nid, node in nodes.items():
-        if node.get("block_type_id") == "dataset_iterator":
+        bid = node.get("block_type_id", "")
+        if bid == "dataset_iterator" or bid.endswith(".dataset_iterator"):
             iterator_node_id = nid
             break
 
@@ -101,10 +145,12 @@ def detect_iterator_structure(
     # Everything reachable from the iterator (including itself) is in the loop
     loop_set: set[str] = {iterator_node_id} | all_descendants(iterator_node_id, downstream)
 
-    # collect_results nodes within the loop
+    # collect_results nodes within the loop (match bare or namespaced block_type_id)
     collect_node_ids: list[str] = [
         nid for nid in loop_set
-        if nodes[nid].get("block_type_id") == "collect_results"
+        if (lambda b: b == "collect_results" or b.endswith(".collect_results"))(
+            nodes[nid].get("block_type_id", "")
+        )
     ]
 
     # Post-loop: descendants of collect_results nodes
@@ -308,6 +354,10 @@ class PipelineExecutor:
         Yields:
             Log message dicts: ``{"level", "node_id", "message", "status?"}``
         """
+        # Clear stale session cache key map at the start of a full (non-cached) run.
+        if not use_cache:
+            _session_cache_keys.clear()
+
         # Ensure local blocks embedded in the workflow are registered before
         # validation.  This is a no-op when they are already present (e.g. the
         # frontend called /api/blocks/register-local beforehand), but is essential
@@ -433,11 +483,17 @@ class PipelineExecutor:
                 continue
             anc_node = self.nodes[nid]
             input_keys = self._get_input_cache_keys(nid)
+            try:
+                anc_block = get_block(anc_node["block_type_id"])
+                anc_src_hash = _compute_source_hash(anc_block)
+            except Exception:
+                anc_src_hash = ""
             key = _make_key(
                 nid,
                 anc_node["block_type_id"],
                 anc_node.get("parameters", {}),
                 input_keys,
+                anc_src_hash,
             )
             if has_cache(key):
                 self._outputs[nid] = load_cache(key)
@@ -607,9 +663,10 @@ class PipelineExecutor:
             self._outputs[cnid] = outputs
             # Cache the finalized collection
             input_keys = self._get_input_cache_keys(cnid)
-            cache_key = _make_key(cnid, "collect_results", c_params, input_keys)
+            cache_key = _make_key(cnid, "collect_results", c_params, input_keys, "")
             self._cache_keys[cnid] = cache_key
             save_cache(cache_key, outputs)
+            _session_cache_keys[cnid] = cache_key
             yield _log("info", cnid, "Collection finalized.", status="done")
 
         # --- Phase 3: post-loop ---
@@ -645,25 +702,6 @@ class PipelineExecutor:
             **node.get("parameters", {}),
             **self._injected_params.get(node_id, {}),
         }
-        # Namespace the cache key per iteration
-        cache_params = {**parameters, "_iter_": iteration}
-
-        input_keys = self._get_input_cache_keys(node_id)
-        cache_key = _make_key(node_id, block_type_id, cache_params, input_keys)
-        self._cache_keys[node_id] = cache_key
-
-        # --- Cache hit ---
-        if use_cache and has_cache(cache_key):
-            self._outputs[node_id] = load_cache(cache_key)
-            yield _log("info", node_id, "Loaded from cache.", status="cached")
-            viz = self._outputs[node_id].get("_viz", {})
-            if viz.get("image_b64"):
-                yield _log("info", node_id, "Visualization ready.",
-                           status="viz_result", image_b64=viz["image_b64"])
-            return
-
-        # --- Execute ---
-        yield _log("info", node_id, "Running...", status="running")
 
         try:
             block = get_block(block_type_id)
@@ -674,6 +712,28 @@ class PipelineExecutor:
                 status="error",
             )
             return
+
+        # Namespace the cache key per iteration; include source hash so edits invalidate cache
+        source_hash = _compute_source_hash(block)
+        cache_params = {**parameters, "_iter_": iteration}
+
+        input_keys = self._get_input_cache_keys(node_id)
+        cache_key = _make_key(node_id, block_type_id, cache_params, input_keys, source_hash)
+        self._cache_keys[node_id] = cache_key
+
+        # --- Cache hit ---
+        if use_cache and has_cache(cache_key):
+            self._outputs[node_id] = load_cache(cache_key)
+            _session_cache_keys[node_id] = cache_key
+            yield _log("info", node_id, "Loaded from cache.", status="cached")
+            viz = self._outputs[node_id].get("_viz", {})
+            if viz.get("image_b64"):
+                yield _log("info", node_id, "Visualization ready.",
+                           status="viz_result", image_b64=viz["image_b64"])
+            return
+
+        # --- Execute ---
+        yield _log("info", node_id, "Running...", status="running")
 
         inputs = self._collect_inputs(node_id)
 
@@ -692,6 +752,9 @@ class PipelineExecutor:
             ):
                 yield msg
             save_cache(cache_key, self._outputs.get(node_id, {}))
+            _session_cache_keys[node_id] = cache_key
+            async for msg in self._pause_if_breakpoint(node_id):
+                yield msg
             yield _log("info", node_id, "Done.", status="done")
             return
 
@@ -717,6 +780,9 @@ class PipelineExecutor:
 
         self._outputs[node_id] = outputs
         save_cache(cache_key, outputs)
+        _session_cache_keys[node_id] = cache_key
+        async for msg in self._pause_if_breakpoint(node_id):
+            yield msg
         yield _log("info", node_id, "Done.", status="done")
         viz = outputs.get("_viz", {})
         if viz.get("image_b64"):
@@ -726,6 +792,30 @@ class PipelineExecutor:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    async def _pause_if_breakpoint(self, node_id: str) -> AsyncGenerator[dict, None]:
+        """If node_id has a breakpoint, emit breakpoint_hit and wait for continue."""
+        if not has_breakpoint(node_id):
+            return
+
+        _continue_event.clear()
+
+        yield {
+            "level": "info",
+            "node_id": node_id,
+            "message": "Breakpoint hit. Execution paused.",
+            "status": "breakpoint_hit",
+            "completed_nodes": list(self._outputs.keys()),
+        }
+
+        await _continue_event.wait()
+
+        yield {
+            "level": "info",
+            "node_id": node_id,
+            "message": "Continuing.",
+            "status": "running",
+        }
 
     async def _execute_node(
         self, node_id: str, use_cache: bool
@@ -743,24 +833,6 @@ class PipelineExecutor:
         block_type_id = node["block_type_id"]
         parameters = {**node.get("parameters", {}), **self._injected_params.get(node_id, {})}
 
-        input_keys = self._get_input_cache_keys(node_id)
-        cache_key = _make_key(node_id, block_type_id, parameters, input_keys)
-        self._cache_keys[node_id] = cache_key
-
-        # --- Cache hit ---
-        if use_cache and has_cache(cache_key):
-            self._outputs[node_id] = load_cache(cache_key)
-            yield _log("info", node_id, "Loaded from cache.", status="cached")
-            # Re-broadcast any visualization produced by this block
-            viz = self._outputs[node_id].get("_viz", {})
-            if viz.get("image_b64"):
-                yield _log("info", node_id, "Visualization ready.",
-                           status="viz_result", image_b64=viz["image_b64"])
-            return
-
-        # --- Execute ---
-        yield _log("info", node_id, "Running...", status="running")
-
         try:
             block = get_block(block_type_id)
         except KeyError:
@@ -770,6 +842,26 @@ class PipelineExecutor:
                 status="error",
             )
             return
+
+        source_hash = _compute_source_hash(block)
+        input_keys = self._get_input_cache_keys(node_id)
+        cache_key = _make_key(node_id, block_type_id, parameters, input_keys, source_hash)
+        self._cache_keys[node_id] = cache_key
+
+        # --- Cache hit ---
+        if use_cache and has_cache(cache_key):
+            self._outputs[node_id] = load_cache(cache_key)
+            _session_cache_keys[node_id] = cache_key
+            yield _log("info", node_id, "Loaded from cache.", status="cached")
+            # Re-broadcast any visualization produced by this block
+            viz = self._outputs[node_id].get("_viz", {})
+            if isinstance(viz, dict) and viz.get("image_b64"):
+                yield _log("info", node_id, "Visualization ready.",
+                           status="viz_result", image_b64=viz["image_b64"])
+            return
+
+        # --- Execute ---
+        yield _log("info", node_id, "Running...", status="running")
 
         inputs = self._collect_inputs(node_id)
 
@@ -790,6 +882,9 @@ class PipelineExecutor:
                 yield msg
             # Outputs are stored by _execute_composite; cache at composite level
             save_cache(cache_key, self._outputs.get(node_id, {}))
+            _session_cache_keys[node_id] = cache_key
+            async for msg in self._pause_if_breakpoint(node_id):
+                yield msg
             yield _log("info", node_id, "Done.", status="done")
             return
 
@@ -815,6 +910,9 @@ class PipelineExecutor:
 
         self._outputs[node_id] = outputs
         save_cache(cache_key, outputs)
+        _session_cache_keys[node_id] = cache_key
+        async for msg in self._pause_if_breakpoint(node_id):
+            yield msg
         yield _log("info", node_id, "Done.", status="done")
         # If the block produced a visualization, broadcast the image
         viz = outputs.get("_viz", {})

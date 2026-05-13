@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useRef, useEffect, useLayoutEffect, useState } from 'react';
 import ReactFlow, {
   MiniMap,
   Controls,
@@ -42,6 +42,8 @@ export default function Canvas() {
     promoteLocalBlock,
     addCompositeBlock,
     activeTabId,
+    breakpointNodeIds,
+    toggleBreakpoint,
   } = usePipelineStore();
 
   const reactFlowWrapper = useRef(null);
@@ -56,6 +58,25 @@ export default function Canvas() {
   // Edge context menu: { x, y, edgeId } | null
   const [edgeContextMenu, setEdgeContextMenu] = useState(null);
   const edgeContextMenuRef = useRef(null);
+
+  // Flip context menus toward screen center when they'd extend off-screen
+  useLayoutEffect(() => {
+    if (!contextMenuRef.current || !contextMenu) return;
+    const rect = contextMenuRef.current.getBoundingClientRect();
+    let { x, y } = contextMenu;
+    if (rect.bottom > window.innerHeight) y = Math.max(0, window.innerHeight - rect.height - 4);
+    if (rect.right  > window.innerWidth)  x = Math.max(0, window.innerWidth  - rect.width  - 4);
+    if (x !== contextMenu.x || y !== contextMenu.y) setContextMenu(m => ({ ...m, x, y }));
+  }, [contextMenu]);
+
+  useLayoutEffect(() => {
+    if (!edgeContextMenuRef.current || !edgeContextMenu) return;
+    const rect = edgeContextMenuRef.current.getBoundingClientRect();
+    let { x, y } = edgeContextMenu;
+    if (rect.bottom > window.innerHeight) y = Math.max(0, window.innerHeight - rect.height - 4);
+    if (rect.right  > window.innerWidth)  x = Math.max(0, window.innerWidth  - rect.width  - 4);
+    if (x !== edgeContextMenu.x || y !== edgeContextMenu.y) setEdgeContextMenu(m => ({ ...m, x, y }));
+  }, [edgeContextMenu]);
 
   // Pending connection (click-to-connect):
   // { sourceNodeId, sourcePortId, sourcePortType, sx, sy } | null
@@ -870,9 +891,18 @@ export default function Canvas() {
                 >
                   ↑ Save block to library
                 </button>
-                <div style={{ height: 1, background: '#374151', margin: '4px 0' }} />
               </>
             )}
+            <div style={{ height: 1, background: '#374151', margin: '4px 0' }} />
+            <button
+              onClick={() => { toggleBreakpoint(contextMenu.nodeId); setContextMenu(null); }}
+              style={menuItem(breakpointNodeIds.has(contextMenu.nodeId) ? '#f87171' : '#fbbf24')}
+              onMouseEnter={e => e.currentTarget.style.background = '#374151'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              {breakpointNodeIds.has(contextMenu.nodeId) ? '● Remove breakpoint' : '○ Set breakpoint'}
+            </button>
+            <div style={{ height: 1, background: '#374151', margin: '4px 0' }} />
             <button
               onClick={() => deleteNodes([contextMenu.nodeId])}
               style={menuItem('#f87171')}

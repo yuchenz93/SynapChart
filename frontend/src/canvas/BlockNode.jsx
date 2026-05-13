@@ -52,10 +52,12 @@ function applyPortOrder(ports, savedIds) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function BlockNode({ id, data, selected }) {
-  const nodeStatuses = usePipelineStore(s => s.nodeStatuses);
-  const blockIndex   = usePipelineStore(s => s.blockIndex);
-  const localBlocks  = usePipelineStore(s => s.localBlocks);
-  const edges        = usePipelineStore(s => s.edges);
+  const nodeStatuses      = usePipelineStore(s => s.nodeStatuses);
+  const blockIndex        = usePipelineStore(s => s.blockIndex);
+  const localBlocks       = usePipelineStore(s => s.localBlocks);
+  const edges             = usePipelineStore(s => s.edges);
+  const breakpointNodeIds = usePipelineStore(s => s.breakpointNodeIds);
+  const hasBreakpoint     = breakpointNodeIds.has(id);
 
   const ctx             = useContext(CanvasContext);
   const pending         = ctx?.pendingConnection ?? null;
@@ -72,7 +74,24 @@ export default function BlockNode({ id, data, selected }) {
   const displayName = definition?.display_name ?? data.block_type_id;
   const category    = isLocal ? 'local' : (definition?.category ?? '');
   const inputs      = definition?.inputs  ?? [];
-  const outputs     = definition?.outputs ?? [];
+
+  // Iterator blocks (dataset_iterator) declare outputs=[] statically because
+  // their ports are dynamic — one per entry in the column_mappings parameter.
+  // Parse column_mappings from the node's current parameters to render live ports.
+  let outputs = definition?.outputs ?? [];
+  if (definition?.is_iterator) {
+    try {
+      const raw = (data.parameters?.column_mappings ?? '').trim();
+      const colMappings = raw ? JSON.parse(raw) : {};
+      const portIds = Object.keys(colMappings);
+      outputs = portIds.length
+        ? portIds.map(pid => ({ port_id: pid, type: 'str', description: `CSV column "${colMappings[pid]}"` }))
+        : [{ port_id: '(set column_mappings)', type: '', description: '' }];
+    } catch {
+      outputs = [{ port_id: '(invalid column_mappings)', type: '', description: '' }];
+    }
+  }
+
   const headerColor = CATEGORY_COLORS[category] ?? '#6b7280';
   const status      = nodeStatuses[id] ?? 'pending';
   const statusStyle = STATUS_STYLES[status] ?? STATUS_STYLES.pending;
@@ -386,6 +405,14 @@ export default function BlockNode({ id, data, selected }) {
           display: 'inline-block', flexShrink: 0,
         }} />
         <span style={{ flex: 1 }}>{displayName}</span>
+        {hasBreakpoint && (
+          <div title="Breakpoint set" style={{
+            width: 10, height: 10, borderRadius: '50%',
+            backgroundColor: '#ef4444',
+            boxShadow: '0 0 0 2px #fff',
+            flexShrink: 0,
+          }} />
+        )}
         {reorderGroup && (
           <span
             title="Press Escape or click elsewhere to exit reorder mode"

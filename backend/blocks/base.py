@@ -111,6 +111,7 @@ class BlockBase(ABC):
             "description": self.description,
             "is_custom": self.is_custom,
             "is_composite": False,
+            "is_iterator": bool(getattr(self, "is_iterator", False)),
             "inputs": inputs,
             "outputs": outputs,
             "parameters": params,

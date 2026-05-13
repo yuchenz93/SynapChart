@@ -18,11 +18,12 @@ def _make_key(
     block_type_id: str,
     parameters: dict,
     input_keys: list[str],
+    source_hash: str = "",
 ) -> str:
     """Compute a deterministic cache key from node identity and upstream keys.
 
-    Changing any parameter or any upstream cache key produces a different key,
-    automatically invalidating this node and all of its descendants.
+    Changing any parameter, upstream cache key, or block source produces a
+    different key, automatically invalidating this node and all descendants.
 
     Args:
         node_id:       The node's unique ID (included for human-readable context
@@ -30,6 +31,9 @@ def _make_key(
         block_type_id: The block implementation identifier.
         parameters:    The node's current parameter dict.
         input_keys:    Cache keys of all direct predecessor nodes.
+        source_hash:   Short hash of the block's implementation source.
+                       Changes when the block code is edited, invalidating
+                       cached results that used the old implementation.
 
     Returns:
         A 16-character hex string used as the on-disk filename stem.
@@ -39,6 +43,7 @@ def _make_key(
             "block_type_id": block_type_id,
             "parameters": parameters,
             "input_keys": sorted(input_keys),
+            "source_hash": source_hash,
         },
         sort_keys=True,
     )

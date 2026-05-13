@@ -58,13 +58,20 @@ class PlotPhasePrecession(BlockBase):
         spike_phases = spike_phases[valid]
         spike_pos = spike_pos[valid]
 
+        # Pearson correlation between phase and position
+        if len(spike_phases) >= 2:
+            corr_r = float(np.corrcoef(spike_phases, spike_pos)[0, 1])
+            full_title = f"{title}  (r = {corr_r:.3f})"
+        else:
+            full_title = title
+
         fig, ax = plt.subplots(figsize=(7, 5))
         ax.scatter(spike_pos, spike_phases, s=4, alpha=0.5, c="steelblue", rasterized=True)
         ax.set_xlabel("Position")
         ax.set_ylabel("Phase (rad)")
         ax.set_yticks([-np.pi, 0, np.pi])
         ax.set_yticklabels(["-π", "0", "π"])
-        ax.set_title(title)
+        ax.set_title(full_title)
         fig.tight_layout()
 
         viz = save_and_encode(fig, save_path, show)

@@ -9,7 +9,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from core.executor import PipelineExecutor
+from core.executor import PipelineExecutor, signal_continue
 from core.checkpoint import clear_cache as _clear_cache_files
 
 router = APIRouter()
@@ -187,6 +187,8 @@ async def stop_pipeline() -> dict:
     global _run_status
     if _active_executor is not None:
         _active_executor.stop()
+    # Unblock a paused pipeline so it can check the stop flag and exit.
+    signal_continue()
     _run_status = "stopped"
     return {"status": "stopped"}
 

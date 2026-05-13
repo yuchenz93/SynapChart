@@ -244,27 +244,6 @@
       }
     },
     {
-      "node_id": "get_phase_precession_r_b5wo",
-      "block_type_id": "get_phase_precession_r",
-      "position": {
-        "x": 639.3982901999768,
-        "y": 688.5540791956946
-      },
-      "parameters": {
-        "title": "Phase Precession",
-        "show_on_run": "true",
-        "save_path": "",
-        "position_range": "auto"
-      },
-      "port_order": {
-        "inputs": [
-          "spikes",
-          "position",
-          "phase"
-        ]
-      }
-    },
-    {
       "node_id": "synapchart_builtin.select_reference_channel_2aep",
       "block_type_id": "synapchart_builtin.select_reference_channel",
       "position": {
@@ -336,27 +315,6 @@
       "source_node_id": "linear_pos_010",
       "source_port_id": "linear_pos",
       "target_node_id": "plot_precession_013",
-      "target_port_id": "position"
-    },
-    {
-      "edge_id": "reactflow__edge-phase_004phase-get_phase_precession_r_b5wophase",
-      "source_node_id": "phase_004",
-      "source_port_id": "phase",
-      "target_node_id": "get_phase_precession_r_b5wo",
-      "target_port_id": "phase"
-    },
-    {
-      "edge_id": "reactflow__edge-load_spikes_005spikes-get_phase_precession_r_b5wospikes",
-      "source_node_id": "load_spikes_005",
-      "source_port_id": "spikes",
-      "target_node_id": "get_phase_precession_r_b5wo",
-      "target_port_id": "spikes"
-    },
-    {
-      "edge_id": "reactflow__edge-linear_pos_010linear_pos-get_phase_precession_r_b5woposition",
-      "source_node_id": "linear_pos_010",
-      "source_port_id": "linear_pos",
-      "target_node_id": "get_phase_precession_r_b5wo",
       "target_port_id": "position"
     },
     {

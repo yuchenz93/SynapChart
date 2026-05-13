@@ -18,7 +18,7 @@
         "y": 566.8984190751971
       },
       "parameters": {
-        "file_path": "E:\\synapchart\\SynapChart\\scripts\\test1_lfp.npy",
+        "file_path": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_1_lfp.npy",
         "sampling_rate": 1250,
         "data_type_override": "raw_signal"
       }
@@ -64,7 +64,7 @@
         "y": -40.41057214795984
       },
       "parameters": {
-        "file_path": "E:\\synapchart\\SynapChart\\scripts\\test1_spikes.npy",
+        "file_path": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_1_spikes.npy",
         "unit_index": 0
       }
     },
@@ -89,7 +89,7 @@
         "y": 304.03183287869587
       },
       "parameters": {
-        "file_path": "E:\\synapchart\\SynapChart\\scripts\\test1_position.npy",
+        "file_path": "E:\\synapchart\\SynapChart\\scripts\\phase_precession_1_position.npy",
         "x_col": 1,
         "y_col": 2,
         "time_col": 0,

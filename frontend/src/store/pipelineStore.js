@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges } from 'reactflow';
+import { setBreakpoint, clearBreakpoint } from '../api/client';
 
 // ── Tab helpers ───────────────────────────────────────────────────────────────
 
@@ -535,6 +536,43 @@ const usePipelineStore = create((set, get) => ({
     const { nodes, edges, localBlocks, compositeBlocks, workflowLibraries } = get();
     return rfStateToWorkflow(nodes, edges, localBlocks, compositeBlocks, workflowLibraries);
   },
+
+  // ── Debugger state (session-global, not per workflow-tab) ─────────────────
+
+  // node_ids that have a breakpoint set (session-only, not saved to workflow JSON)
+  breakpointNodeIds: new Set(),
+  // true while execution is paused at a breakpoint
+  isPaused: false,
+  pausedAtNodeId: null,
+  // { node_id: [variable summary objects] } populated on breakpoint_hit
+  workspaceData: {},
+  // which console tab is active: 'logs' | 'workspace'
+  activeConsoleTab: 'logs',
+
+  toggleBreakpoint: (nodeId) => set(state => {
+    const next = new Set(state.breakpointNodeIds);
+    if (next.has(nodeId)) {
+      next.delete(nodeId);
+      clearBreakpoint(nodeId).catch(() => {});
+    } else {
+      next.add(nodeId);
+      setBreakpoint(nodeId).catch(() => {});
+    }
+    return { breakpointNodeIds: next };
+  }),
+
+  setPaused: (paused, nodeId = null) => set({
+    isPaused: paused,
+    pausedAtNodeId: nodeId,
+  }),
+
+  setWorkspaceNodeData: (nodeId, variables) => set(state => ({
+    workspaceData: { ...state.workspaceData, [nodeId]: variables },
+  })),
+
+  clearWorkspace: () => set({ workspaceData: {}, isPaused: false, pausedAtNodeId: null }),
+
+  setActiveConsoleTab: (tab) => set({ activeConsoleTab: tab }),
 }));
 
 export default usePipelineStore;

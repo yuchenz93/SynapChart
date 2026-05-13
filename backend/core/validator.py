@@ -14,8 +14,10 @@ _COMPATIBILITY: dict[str, set[str]] = {
     "NeuroData[tuning_curve]": {"NeuroData[tuning_curve]", "NeuroData[any]"},
     "NeuroData[decoded]":      {"NeuroData[decoded]", "NeuroData[any]"},
     "NeuroData[any]":          {"NeuroData[any]"},
-    "float":                   {"float"},
-    "int":                     {"int", "float"},
+    # Scalars can feed collect_results (NeuroData[any]) since _stack_items
+    # handles non-NeuroData values via np.asarray.
+    "float":                   {"float", "NeuroData[any]"},
+    "int":                     {"int", "float", "NeuroData[any]"},
     "str":                     {"str"},
     # ── CRCNS / population types ────────────────────────────────────────────
     # tuning_curves_population is also compatible with tuning_curve so the

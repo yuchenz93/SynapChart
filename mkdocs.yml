@@ -1,6 +1,7 @@
 site_name: SynapChart
 site_url: https://yuchenz93.github.io/SynapChart/
 site_description: Visual pipeline builder for neuroscience data analysis
+site_author: Yuchen Zhou
 repo_url: https://github.com/yuchenz93/SynapChart
 repo_name: yuchenz93/SynapChart
 
@@ -29,8 +30,14 @@ theme:
     - navigation.sections
     - navigation.top
     - search.highlight
+    - toc.integrate
   icon:
     repo: fontawesome/brands/github
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yuchenz93/SynapChart
 
 validation:
   links:

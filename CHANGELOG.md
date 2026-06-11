@@ -23,3 +23,16 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - `pyproject.toml` for pip distribution
 - GitHub Actions CI (test matrix: Python 3.10/3.11/3.12)
 - GitHub Actions release workflow (build + publish to PyPI on git tag)
+- Security: load-time consent gate for workflows containing custom code.
+  Opening a workflow with local blocks or embedded (packed) block sources now
+  returns a code manifest **without executing anything**; the embedded Python is
+  registered only after the user reviews it and confirms via the new
+  CodeConsentModal. Built-in templates remain trusted. Documented in
+  `SECURITY.md`.
+- Test suite (77 tests) covering the reproducibility-critical core: DAG
+  resolution, checkpoint cache-key derivation/invalidation, port + workflow
+  validation, v1→v2 schema migration, and the execution engine (linear runs,
+  cache reuse, parameter invalidation, error reporting, and batch iteration
+  with the dataset iterator / collect-results path). Adds `pytest`
+  configuration (`asyncio_mode = "auto"`) and shared fixtures in
+  `backend/tests/conftest.py`.

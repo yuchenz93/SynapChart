@@ -23,8 +23,11 @@ export const stopPipeline = () =>
 export const saveWorkflow = (workflow, filePath) =>
   axios.post(`${BASE}/api/files/save`, { workflow, file_path: filePath });
 
-export const loadWorkflow = (filePath) =>
-  axios.post(`${BASE}/api/files/load`, { file_path: filePath });
+// trusted=false (default) makes the backend return a code manifest without
+// executing any custom code the workflow contains; pass true after the user
+// has consented via the CodeConsentModal.
+export const loadWorkflow = (filePath, trusted = false) =>
+  axios.post(`${BASE}/api/files/load`, { file_path: filePath, trusted });
 
 export const getTemplates = () =>
   axios.get(`${BASE}/api/files/templates`).then(r => r.data);

@@ -36,6 +36,9 @@ htmlcov/
 testdata_crcns_hc11/
 codetemp/
 
+# mkdocs build output (regenerated from docs/ by `mkdocs build`)
+site/
+
 # md docs
 docs/requests/
 docs/progress/

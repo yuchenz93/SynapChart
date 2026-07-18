@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import usePipelineStore from '../store/pipelineStore';
 import FileBrowser from '../modals/FileBrowser';
+import CodeConsentModal from '../modals/CodeConsentModal';
 import {
   runPipeline, stepPipeline, stopPipeline,
   saveWorkflow, loadWorkflow,
@@ -44,6 +45,10 @@ export default function TopToolbar() {
 
   // 'open' | 'save' | 'saveAs' | null
   const [browserMode, setBrowserMode] = useState(null);
+
+  // Pending consent for opening a workflow that contains custom code.
+  // { path, manifest } while the CodeConsentModal is shown, else null.
+  const [consent, setConsent] = useState(null);
 
   const [templates, setTemplates] = useState([]);
   const [showTemplates, setShowTemplates] = useState(false);
@@ -189,21 +194,46 @@ export default function TopToolbar() {
     }
   };
 
+  // Place a loaded workflow onto the canvas in a fresh tab.
+  const applyLoadedWorkflow = (path, data) => {
+    const { workflow, missing_libraries, conflicts, forwarding_redirects } = data;
+    clearTemplateState();
+    addTab();
+    loadWorkflowIntoStore(workflow, {
+      missingLibraries:    missing_libraries    ?? [],
+      libraryConflicts:    conflicts            ?? [],
+      forwardingRedirects: forwarding_redirects ?? [],
+    });
+    setCurrentFilePath(path);
+  };
+
+  // User confirmed the consent dialog — reload with trust so the backend
+  // registers the embedded code, then render the workflow.
+  const handleTrustAndLoad = async () => {
+    const path = consent?.path;
+    setConsent(null);
+    if (!path) return;
+    try {
+      const res = await loadWorkflow(path, true);
+      applyLoadedWorkflow(path, res.data);
+    } catch (err) {
+      alert(`Failed to load: ${err.response?.data?.message ?? err.message}`);
+    }
+  };
+
   // Called when the FileBrowser confirms a selection
   const handleBrowserSelect = async (path) => {
     setBrowserMode(null);
     if (browserMode === 'open') {
       try {
+        // First load is untrusted: the backend returns a code manifest without
+        // executing anything if the workflow contains custom code.
         const res = await loadWorkflow(path);
-        const { workflow, missing_libraries, conflicts, forwarding_redirects } = res.data;
-        clearTemplateState();
-        addTab();
-        loadWorkflowIntoStore(workflow, {
-          missingLibraries:    missing_libraries    ?? [],
-          libraryConflicts:    conflicts            ?? [],
-          forwardingRedirects: forwarding_redirects ?? [],
-        });
-        setCurrentFilePath(path);
+        if (res.data.requires_consent) {
+          setConsent({ path, manifest: res.data.code_manifest ?? [] });
+          return;   // nothing is loaded (and nothing can run) until consent
+        }
+        applyLoadedWorkflow(path, res.data);
       } catch (err) {
         alert(`Failed to load: ${err.response?.data?.message ?? err.message}`);
       }
@@ -347,6 +377,14 @@ export default function TopToolbar() {
           onClose={() => setPackMode(false)}
           placeholder="Packed workflow name…"
           autoExt=".json"
+        />
+      )}
+      {consent && (
+        <CodeConsentModal
+          filePath={consent.path}
+          manifest={consent.manifest}
+          onTrust={handleTrustAndLoad}
+          onCancel={() => setConsent(null)}
         />
       )}
       {/* File ops */}

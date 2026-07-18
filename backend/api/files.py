@@ -25,6 +25,9 @@ class SaveRequest(BaseModel):
 
 class LoadRequest(BaseModel):
     file_path: str
+    # Set True only after the user has consented to running any custom code the
+    # workflow contains.  Untrusted loads parse + migrate but never exec code.
+    trusted: bool = False
 
 
 class PackRequest(BaseModel):
@@ -218,8 +221,67 @@ def _collect_all_node_types(fragment: dict) -> set[str]:
     return types
 
 
-def _process_workflow(workflow: dict, *, normalize_libraries: bool = False) -> tuple[dict, list[dict], bool, list[str]]:
+def _detect_executable_code(workflow: dict) -> list[dict]:
+    """Return a manifest of every piece of user code a workflow would execute.
+
+    This is what the consent gate shows the user *before* anything runs.  Two
+    sources of executable code exist:
+
+    - ``local_blocks``: per-workflow custom blocks whose ``source_snippet`` is
+      compiled and exec'd by the engine when the pipeline runs.
+    - ``embedded_blocks`` (packed workflows): full Python module sources that
+      are exec'd at load time for any library not installed locally; composite
+      embedded entries may nest further embedded blocks.
+
+    Returns:
+        A list of ``{block_type_id, kind, library_id, line_count, source}``
+        dicts.  Empty when the workflow contains no executable code.
+    """
+    items: list[dict] = []
+
+    for lb in workflow.get("local_blocks", []):
+        source = lb.get("source_snippet", "") or ""
+        items.append({
+            "block_type_id": lb.get("block_type_id", "?"),
+            "kind":          "local_block",
+            "library_id":    "",
+            "line_count":    source.count("\n") + 1 if source else 0,
+            "source":        source,
+        })
+
+    def _walk_embedded(embedded: dict) -> None:
+        for bid, entry in embedded.items():
+            if entry.get("type") == "python":
+                source = entry.get("source_code", "") or ""
+                items.append({
+                    "block_type_id": bid,
+                    "kind":          "embedded_python",
+                    "library_id":    entry.get("library_id", ""),
+                    "line_count":    source.count("\n") + 1 if source else 0,
+                    "source":        source,
+                })
+            inner = entry.get("embedded_blocks", {})
+            if inner:
+                _walk_embedded(inner)
+
+    _walk_embedded(workflow.get("embedded_blocks", {}))
+    return items
+
+
+def _process_workflow(
+    workflow: dict,
+    *,
+    normalize_libraries: bool = False,
+    trusted: bool = True,
+) -> tuple[dict, list[dict], bool, list[str]]:
     """Migrate schema, register blocks, and compute diagnostics.
+
+    Args:
+        normalize_libraries: Coerce legacy string-form ``libraries`` to dicts.
+        trusted: When False, embedded Python sources are NOT exec'd/registered.
+            Schema migration and composite (JSON-only, no code) registration
+            still happen so the canvas can render.  Callers gate this on user
+            consent — see :func:`_detect_executable_code`.
 
     Returns:
         (workflow, forwarding_redirects, schema_migrated, composite_warnings)
@@ -270,7 +332,12 @@ def _process_workflow(workflow: dict, *, normalize_libraries: bool = False) -> t
     # For packed workflows: auto-register embedded blocks for any library that
     # is not installed locally.  This makes packed workflows self-contained —
     # the recipient does not need to install the author's private libraries.
-    if workflow.get("packed"):
+    #
+    # This step exec's arbitrary Python from the file, so it only runs once the
+    # caller has obtained user consent (trusted=True).  Untrusted loads skip it;
+    # the workflow still renders, but running it (or a trusted reload) is what
+    # actually executes the embedded code.
+    if trusted and workflow.get("packed"):
         embedded = workflow.get("embedded_blocks", {})
         if embedded:
             from core.library_registry import _libraries
@@ -333,7 +400,15 @@ async def load_workflow(request: LoadRequest) -> dict:
             "details": {},
         })
 
-    workflow, forwarding_redirects, schema_migrated, warnings = _process_workflow(workflow)
+    # Consent gate: if the workflow carries custom code and the caller has not
+    # yet confirmed trust, return the code manifest without executing anything.
+    # The frontend shows it to the user and re-requests with trusted=True.
+    code_manifest = _detect_executable_code(workflow)
+    requires_consent = bool(code_manifest) and not request.trusted
+
+    workflow, forwarding_redirects, schema_migrated, warnings = _process_workflow(
+        workflow, trusted=request.trusted
+    )
     missing_libraries = _check_missing_libraries(workflow)
     conflicts         = _check_conflicts(workflow)
 
@@ -344,6 +419,8 @@ async def load_workflow(request: LoadRequest) -> dict:
         "forwarding_redirects": forwarding_redirects,
         "schema_migrated":      schema_migrated,
         "warnings":             warnings,
+        "requires_consent":     requires_consent,
+        "code_manifest":        code_manifest,
     }
 
 

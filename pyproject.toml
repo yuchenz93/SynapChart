@@ -10,7 +10,7 @@ readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [
-    { name = "Your Name", email = "you@example.com" }
+    { name = "Yuchen Zhou", email = "yuchenzhou93@gmail.com" }
 ]
 keywords = ["neuroscience", "EEG", "LFP", "spike", "pipeline", "visualization"]
 classifiers = [
@@ -45,9 +45,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/synapchart"
-Documentation = "https://github.com/your-org/synapchart/wiki"
-Issues = "https://github.com/your-org/synapchart/issues"
+Homepage = "https://github.com/yuchenz93/SynapChart"
+Documentation = "https://yuchenz93.github.io/SynapChart/"
+Issues = "https://github.com/yuchenz93/SynapChart/issues"
 
 [project.scripts]
 synapchart = "backend.cli:main"
@@ -63,3 +63,12 @@ include = ["backend*"]
 # Version is derived automatically from git tags (e.g. tag v0.1.0 → version 0.1.0)
 # fallback_version is used when there is no git repo or no tags yet (e.g. during dev).
 fallback_version = "0.1.0.dev0"
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+# asyncio_mode = "auto" lets plain `async def test_*` run without per-test markers.
+asyncio_mode = "auto"
+filterwarnings = [
+    # Surface our own deprecations but don't fail the suite on third-party ones.
+    "ignore::DeprecationWarning",
+]

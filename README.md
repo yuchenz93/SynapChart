@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/assets/logo.svg" alt="SynapChart logo" width="120" />
+  <img src="https://raw.githubusercontent.com/yuchenz93/SynapChart/main/docs/assets/logo.svg" alt="SynapChart logo" width="120" />
 
   <h1>SynapChart</h1>
 

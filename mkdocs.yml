@@ -60,6 +60,7 @@ nav:
       - Overview: tutorials/index.md
       - "Tutorial 1: Theta Phase Precession": tutorials/tutorial1.md
       - "Tutorial 2: Batch Processing with the Dataset Iterator": tutorials/tutorial2.md
+      - "Tutorial 3: Theta Sequences with Real Hippocampal Data": tutorials/tutorial3.md
   - Block Reference:
       - Overview: blocks/index.md
       - NeuroData: neurodata.md

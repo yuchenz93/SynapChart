@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yuchenz93.github.io/SynapChart/sitemap.xml

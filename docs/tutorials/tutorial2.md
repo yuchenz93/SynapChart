@@ -168,6 +168,6 @@ In this tutorial you:
 
 ## Next Steps
 
-- **Tutorial 3:** Loading real data from the CRCNS HC-11 dataset using the `crcns_hc11_theta_precession_full` template
+- **[Tutorial 3](tutorial3.md):** Theta sequences with real hippocampal data — loading a CRCNS HC-11 session and analyzing direction-specific neural dynamics
 - [Flow Control Blocks](../advanced/flow-control.md) — full reference for Dataset Iterator and Collect Results parameters
 - [Composite Blocks](../advanced/composite-blocks.md) — how to build and package your own composite blocks

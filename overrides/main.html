@@ -2,14 +2,46 @@
 
 {% block extrahead %}
   <meta name="google-site-verification" content="Bex-YUYr79Rbq0qPqsHJ8gJ3cux3JY8LQ5IPdc8aE0A" />
+  <meta name="keywords" content="SynapChart, neuroscience, pipeline builder, EEG, LFP, spike train, electrophysiology, data analysis, visual programming, node editor, hippocampus, theta phase precession, Python, open source" />
+
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="SynapChart" />
-  <meta property="og:description" content="Visual pipeline builder for neuroscience data analysis" />
+  <meta property="og:site_name" content="SynapChart" />
+  <meta property="og:title" content="SynapChart — Visual pipeline builder for neuroscience data analysis" />
+  <meta property="og:description" content="Drag-and-drop tool for building neuroscience analysis pipelines — like ComfyUI, but for spike trains and LFP signals. Open source and pip-installable." />
   <meta property="og:url" content="https://yuchenz93.github.io/SynapChart/" />
   <meta property="og:image" content="https://yuchenz93.github.io/SynapChart/assets/logo.svg" />
+  <meta property="og:image:alt" content="SynapChart logo" />
+
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="SynapChart" />
-  <meta name="twitter:description" content="Visual pipeline builder for neuroscience data analysis" />
+  <meta name="twitter:title" content="SynapChart — Visual pipeline builder for neuroscience" />
+  <meta name="twitter:description" content="Drag-and-drop tool for building neuroscience analysis pipelines. Open source and pip-installable." />
+  <meta name="twitter:image" content="https://yuchenz93.github.io/SynapChart/assets/logo.svg" />
+
+  <!-- Structured data for search engines -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "SynapChart",
+    "description": "Visual pipeline builder for neuroscience data analysis. A drag-and-drop tool for building EEG/LFP and spike train analysis pipelines by connecting blocks on a canvas.",
+    "applicationCategory": "Scientific/Engineering",
+    "operatingSystem": "Windows, macOS, Linux",
+    "url": "https://yuchenz93.github.io/SynapChart/",
+    "downloadUrl": "https://pypi.org/project/synapchart/",
+    "softwareHelp": "https://yuchenz93.github.io/SynapChart/",
+    "license": "https://opensource.org/licenses/MIT",
+    "author": {
+      "@type": "Person",
+      "name": "Yuchen Zhou"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "keywords": "neuroscience, EEG, LFP, spike train, electrophysiology, pipeline, visualization"
+  }
+  </script>
 {% endblock %}

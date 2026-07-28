@@ -341,5 +341,5 @@ In this tutorial you:
 ## Next Steps
 
 - **[Tutorial 2](tutorial2.md):** Using the dataset iterator to batch-process all three sessions automatically with a CSV file
-- **Tutorial 3:** Loading real data from the CRCNS HC-11 dataset using the `crcns_hc11_theta_precession_full` template
+- **[Tutorial 3](tutorial3.md):** Theta sequences with real hippocampal data — loading a CRCNS HC-11 session and analyzing direction-specific neural dynamics
 - [Block Reference](../blocks/index.md) — full documentation of all built-in blocks and their parameters

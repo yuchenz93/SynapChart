@@ -1,0 +1,4 @@
+session_id,lfp_file,spike_file,pos_file
+session_1,scripts/phase_precession_1_lfp.npy,scripts/phase_precession_1_spikes.npy,scripts/phase_precession_1_position.npy
+session_2,scripts/phase_precession_2_lfp.npy,scripts/phase_precession_2_spikes.npy,scripts/phase_precession_2_position.npy
+session_3,scripts/phase_precession_3_lfp.npy,scripts/phase_precession_3_spikes.npy,scripts/phase_precession_3_position.npy

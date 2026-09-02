@@ -2,7 +2,7 @@
 
 Every value that flows between blocks in a SynapChart pipeline is a `NeuroData` object. It is SynapChart's own data type — not a third-party library — defined in `backend/neurodata/types.py`.
 
-Think of it as a numpy array with a label and a few standard neuroscience fields attached. The label (`data_type`) is what the port validator checks when you connect two blocks: it will warn you if you try to wire a `spike_times` output into an `lfp` input.
+Think of it as a numpy array with a few standard neuroscience fields attached (sampling rate, timestamps, channel names) plus a short **role** label. When you connect two blocks, SynapChart checks both the **structure** of the payload (array shape and dtype, scalar, string, …) and the **role** — structure is enforced, while a role mismatch (say, a `spike_times` output into an `lfp` input) is just a friendly warning you can accept.
 
 ---
 
@@ -10,7 +10,7 @@ Think of it as a numpy array with a label and a few standard neuroscience fields
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `data_type` | `str` | Type tag (e.g. `"lfp"`, `"spike_times"`). Controls port compatibility. |
+| `data_type` | `str` | Free-form **role** tag (e.g. `"lfp"`, `"spike_times"`). Advisory — guides connections; see [How ports are typed](#how-ports-are-typed). |
 | `array` | `np.ndarray` | The primary data payload — shape depends on the type. |
 | `sampling_rate` | `float \| None` | Samples per second. `None` when not applicable (e.g. spike times). |
 | `timestamps` | `np.ndarray \| None` | 1-D array of timestamps in seconds aligned to `array`. |
@@ -19,11 +19,36 @@ Think of it as a numpy array with a label and a few standard neuroscience fields
 
 ---
 
-## Registered data types
+## How ports are typed
 
-The `data_type` field must be one of the registered strings below. The port validator uses these to decide whether two ports are compatible.
+A port's type has **two independent parts**:
 
-| Type tag | Array shape | Typical contents |
+1. **Structure** — what the payload mechanically *is*. This is general, not
+   neuroscience-specific: an N-dimensional numpy array (of floats, ints, or
+   bools), a scalar (`float` / `int` / `bool`), a `str`, a list, and so on. For
+   array payloads SynapChart also tracks the rank (1-D, 2-D, …) and whether the
+   data carries per-sample timing. Structure is **enforced** — you can't wire a
+   string into an array port.
+2. **Role** — an optional, **free-form** label for what the data *means* in your
+   domain (`lfp`, `spike_times`, `position`, or anything you invent). Roles are
+   **advisory**: a mismatch shows a ⚠ warning you can accept — it never blocks.
+
+There is **no fixed list of allowed types**. You can introduce a new role at any
+time — in a custom block or a third-party library — without editing any core
+file.
+
+| Connection | When | Behaviour |
+|---|---|---|
+| ✅ **OK** | structure fits, roles agree | connects normally |
+| ⚠ **Warning** | structure fits, roles differ | connects, flagged with a ⚠ badge |
+| ⛔ **Blocked** | structure doesn't fit (e.g. a scalar into an array port) | rejected |
+
+### Common roles in the built-in library
+
+These are **conventions used by the blocks that ship with SynapChart** — examples
+to reuse or extend, not a closed set:
+
+| Role | Array shape | Typical contents |
 |----------|-------------|-----------------|
 | `raw_signal` | (n_samples,) or (n_samples × n_channels) | Unprocessed continuous signal, any modality |
 | `lfp` | (n_samples,) or (n_samples × n_channels) | Local field potential — same shape as `raw_signal`, typed for downstream validation |
@@ -46,15 +71,18 @@ The `data_type` field must be one of the registered strings below. The port vali
 
 ## Port notation
 
-Throughout the block reference, ports are written as `NeuroData[type_tag]`, for example:
+Throughout the block reference, ports are written `NeuroData[role]`, for example:
 
 ```
-NeuroData[lfp]          # a filtered LFP signal
+NeuroData[lfp]          # array payload with the role "lfp"
 NeuroData[spike_times]  # spike timestamps for one unit
 NeuroData[decoded]      # posterior probability matrix
 ```
 
-A port typed `NeuroData[any]` accepts any `NeuroData` object regardless of its `data_type`.
+The part in brackets is just the **role**. `NeuroData[any]` accepts anything.
+Scalars and strings are written plainly (`float`, `int`, `bool`, `str`). When a
+block cares about shape but not a domain role, structure can be declared directly
+— e.g. `array<float,2d,timed>`.
 
 ---
 

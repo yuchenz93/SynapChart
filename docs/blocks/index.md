@@ -13,9 +13,16 @@ SynapChart ships with a built-in library of blocks organised into six categories
 
 ## Port types
 
-Blocks communicate through typed ports. The most common types are:
+Blocks communicate through **typed ports**. A port type has two parts: a
+**structure** (a numpy array, scalar, or string — general, not neuroscience-only)
+and an optional **role** labelling what the data means. Structure is enforced;
+roles are **free-form and advisory** — a mismatch warns rather than blocks, so new
+roles can be added in custom blocks or external libraries without touching core.
+See [NeuroData](../neurodata.md#how-ports-are-typed) for the full model.
 
-| Type | Carries |
+The port types used by the **built-in** blocks — conventions, not a closed list:
+
+| Port type | Carries |
 |------|---------|
 | `NeuroData[raw_signal]` | Generic continuous signal (samples × channels) |
 | `NeuroData[lfp]` | LFP signal — same shape, typed for downstream validation |
@@ -32,3 +39,6 @@ Blocks communicate through typed ports. The most common types are:
 | `NeuroData[theta_sequence]` | Averaged theta sequence matrix |
 | `NeuroData[epochs]` | Epoch boundaries (start/stop times) |
 | `str` | Plain string — used for file paths and constants |
+
+Custom blocks may declare any role you like — the block wizard suggests existing
+roles and lets you type new ones.

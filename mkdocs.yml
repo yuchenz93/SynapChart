@@ -39,10 +39,6 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/yuchenz93/SynapChart
 
-validation:
-  links:
-    not_found: ignore   # screenshots not added yet; remove once images are in place
-
 markdown_extensions:
   - admonition
   - pymdownx.details

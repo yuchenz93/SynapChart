@@ -59,7 +59,10 @@ def _compute_source_hash(block) -> str:
     # Built-in block — use the installed package version as a proxy.
     try:
         from importlib.metadata import version as _pkg_version
-        ver = _pkg_version("synapchart")
+        # version() can return None when the distribution is found but its
+        # metadata carries no Version (e.g. a stale editable egg-info); fall
+        # back so we never call .encode() on None.
+        ver = _pkg_version("synapchart") or "builtin"
     except Exception:
         ver = "builtin"
     return hashlib.md5(ver.encode()).hexdigest()[:8]

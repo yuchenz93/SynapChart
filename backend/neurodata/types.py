@@ -9,27 +9,10 @@ from typing import Any
 import numpy as np
 
 
-# Valid values for NeuroData.data_type.
-# Extend this tuple and update the validator compatibility table to add new types.
-REGISTERED_DATA_TYPES: tuple[str, ...] = (
-    "raw_signal",    # Unprocessed continuous signal (any modality)
-    "lfp",           # Local field potential (filtered raw signal)
-    "spike_times",   # 1-D array of spike timestamps for a single unit
-    "spike_matrix",  # 2-D array: units × time bins
-    "position",      # Animal position data (x, y, timestamps)
-    "tuning_curve",  # Place field or tuning curve (bins × firing rate)
-    "decoded",       # Posterior probability matrix from a decoder
-    "any",           # Accepts any NeuroData type (use sparingly)
-    # ── CRCNS / population types ─────────────────────────────────────────────
-    "multi_spike_times",       # Spike times for many cells; cell IDs in metadata
-    "epochs",                  # Session epoch boundaries (MazeEpoch, PREEpoch …)
-    "tuning_curves_population",# (n_cells × n_bins) firing-rate maps for all cells
-    "place_fields",            # Per-cell place-field boundaries and properties
-    "phase_precession",        # Per-cell θ-phase vs position regression results
-    "theta_cycles",            # (N × 2) array of theta cycle [t_start, t_end]
-    "theta_sequence",          # Averaged look-ahead/behind sequence matrix
-    "laps",                    # Directional running bouts: (N × 3) [t_start, t_end, direction]
-)
+# NeuroData.data_type is a free-form **semantic role** tag (e.g. "lfp",
+# "spike_times"). Compatibility is derived structurally + by role in
+# neurodata/port_types.py (see docs/specs/12_port_type_system_v2.md); there is no
+# longer a fixed registry of valid types.
 
 
 @dataclass

@@ -368,6 +368,7 @@ export default function Canvas() {
 
     cancelPending();
 
+    let edgeData = {};
     try {
       const srcType = pending.sourcePortType ?? 'NeuroData[any]';
       const tgtType = portType ?? 'NeuroData[any]';
@@ -385,19 +386,21 @@ export default function Canvas() {
       const srcName = resolveName(pending.sourceNodeId);
       const tgtName = resolveName(nodeId);
 
+      // ERROR (structural) is blocked; WARN (role mismatch) is allowed and
+      // flagged with a persisted ⚠ badge on the edge (Port Types v2).
       if (!res.data.valid) {
         usePipelineStore.getState().addConsoleMessage({
           type: 'error',
-          text: `Connection rejected: ${res.data.message}`,
+          text: `Connection rejected: ${srcName} → ${tgtName} — ${res.data.message}`,
         });
         return;
       }
 
-      const usesAny = srcType.endsWith('[any]') || tgtType.endsWith('[any]');
-      if (usesAny && srcType !== tgtType) {
+      if (res.data.status === 'warn') {
+        edgeData = { warn: true, warnMsg: res.data.message };
         usePipelineStore.getState().addConsoleMessage({
           type: 'warning',
-          text: `Connection made with type warning: ${srcName} → ${tgtName} — consider using a more specific port type`,
+          text: `Connected with warning: ${srcName} → ${tgtName} — ${res.data.message}`,
         });
       } else {
         usePipelineStore.getState().addConsoleMessage({
@@ -409,7 +412,7 @@ export default function Canvas() {
       // Allow connection if validation endpoint is unreachable during development
     }
 
-    setEdges(eds => addEdge(connection, eds));
+    setEdges(eds => addEdge({ ...connection, data: edgeData }, eds));
     setDirty(true);
   }, [cancelPending, setEdges, setDirty]);
 
@@ -463,6 +466,7 @@ export default function Canvas() {
 
   // ── Connection validation (drag-to-connect) ───────────────────────────────
   const onConnect = useCallback(async (connection) => {
+    let edgeData = {};
     try {
       // React Flow passes handle IDs (port_ids) in sourceHandle/targetHandle,
       // not port types. Resolve the actual type from the block definition.
@@ -493,20 +497,21 @@ export default function Canvas() {
       const srcName = resolveName(connection.source);
       const tgtName = resolveName(connection.target);
 
+      // ERROR (structural) is blocked; WARN (role mismatch) is allowed and
+      // flagged with a persisted ⚠ badge on the edge (Port Types v2).
       if (!res.data.valid) {
         usePipelineStore.getState().addConsoleMessage({
           type: 'error',
-          text: `Connection rejected: ${res.data.message}`,
+          text: `Connection rejected: ${srcName} → ${tgtName} — ${res.data.message}`,
         });
         return;
       }
 
-      // Valid but either side uses the broad NeuroData[any] type → warning
-      const usesAny = srcType.endsWith('[any]') || tgtType.endsWith('[any]');
-      if (usesAny && srcType !== tgtType) {
+      if (res.data.status === 'warn') {
+        edgeData = { warn: true, warnMsg: res.data.message };
         usePipelineStore.getState().addConsoleMessage({
           type: 'warning',
-          text: `Connection made with type warning: ${srcName} → ${tgtName} — consider using a more specific port type`,
+          text: `Connected with warning: ${srcName} → ${tgtName} — ${res.data.message}`,
         });
       } else {
         usePipelineStore.getState().addConsoleMessage({
@@ -532,7 +537,7 @@ export default function Canvas() {
       return;
     }
 
-    setEdges(eds => addEdge({ ...connection, type: 'custom' }, eds));
+    setEdges(eds => addEdge({ ...connection, type: 'custom', data: edgeData }, eds));
     setDirty(true);
   }, [setEdges, setDirty]);
 

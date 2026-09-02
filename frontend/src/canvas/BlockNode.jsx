@@ -13,7 +13,7 @@
 import { useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
 import usePipelineStore, { localBlockToDefinition } from '../store/pipelineStore';
-import { CanvasContext, isCompatible } from './CanvasContext';
+import { CanvasContext, compatState } from './CanvasContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -208,15 +208,16 @@ export default function BlockNode({ id, data, selected }) {
   const targetHandleStyle = (port) => {
     const occupied = isOccupied(port.port_id);
     if (pending && !isSourceNode) {
-      const compatible = isCompatible(pending.sourcePortType, port.type);
-      const ringColor  = compatible ? '#22c55e' : '#ef4444';
+      // Three-state feedback: green = ok, amber = role warning, red = blocked.
+      const state = compatState(pending.sourcePortType, port.type);
+      const ringColor = state === 'ok' ? '#22c55e' : state === 'warn' ? '#f59e0b' : '#ef4444';
       return {
         width: 10, height: 10,
         background: occupied ? ringColor : 'transparent',
         border: `2px solid ${ringColor}`,
         boxShadow: `0 0 5px ${ringColor}80`,
         transition: 'box-shadow 0.15s',
-        cursor: compatible && !occupied ? 'pointer' : 'not-allowed',
+        cursor: state !== 'error' && !occupied ? 'pointer' : 'not-allowed',
       };
     }
     return {

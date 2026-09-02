@@ -1,4 +1,4 @@
-"""Tests for port-type and workflow validation (core.validator)."""
+"""Tests for port-type and workflow validation (core.validator + port_types v2)."""
 
 from __future__ import annotations
 
@@ -6,55 +6,104 @@ import pytest
 
 from blocks.base import PortDefinition
 from core.validator import validate_connection, validate_workflow
+from neurodata.port_types import Compat, PortType, check_types, infer_port_type, parse_port_type
+
+
+def _status(out, req):
+    return validate_connection(out, req)[0]
 
 
 # ---------------------------------------------------------------------------
-# validate_connection — the compatibility table
+# validate_connection — three-state structural + role compatibility
 # ---------------------------------------------------------------------------
 
-class TestValidateConnection:
-    def test_exact_type_match_is_valid(self):
-        ok, msg = validate_connection("NeuroData[lfp]", "NeuroData[lfp]")
-        assert ok is True
+class TestStructural:
+    def test_exact_type_match_is_ok(self):
+        status, msg = validate_connection("NeuroData[lfp]", "NeuroData[lfp]")
+        assert status is Compat.OK
         assert msg == ""
 
-    def test_any_accepts_compatible_source(self):
-        ok, _ = validate_connection("NeuroData[spike_times]", "NeuroData[any]")
-        assert ok is True
+    def test_container_mismatch_is_error(self):
+        # str output into a NeuroData input — wrong container, hard block.
+        assert _status("str", "NeuroData[lfp]") is Compat.ERROR
+        assert _status("NeuroData[lfp]", "str") is Compat.ERROR
 
-    def test_raw_signal_feeds_lfp_input(self):
-        # lfp inputs accept raw_signal (a raw signal can be treated as lfp).
-        ok, _ = validate_connection("NeuroData[lfp]", "NeuroData[raw_signal]")
-        assert ok is True
+    def test_ndim_mismatch_is_error(self):
+        # spike_times is 1-D; position requires 2-D.
+        status, msg = validate_connection("NeuroData[spike_times]", "NeuroData[position]")
+        assert status is Compat.ERROR
+        assert "-D" in msg
 
-    def test_incompatible_types_rejected(self):
-        ok, msg = validate_connection("NeuroData[spike_times]", "NeuroData[position]")
-        assert ok is False
-        assert "mismatch" in msg.lower()
+    def test_untimed_into_timed_is_error(self):
+        # tuning_curve is untimed; feeding it where a timed signal is required.
+        assert _status("NeuroData[tuning_curve]", "NeuroData[lfp]") is Compat.ERROR
 
-    def test_int_feeds_float(self):
-        ok, _ = validate_connection("int", "float")
-        assert ok is True
+    def test_int_scalar_widens_to_float(self):
+        assert _status("int", "float") is Compat.OK
 
-    def test_float_does_not_feed_int(self):
-        ok, _ = validate_connection("float", "int")
-        assert ok is False
+    def test_float_scalar_does_not_narrow_to_int(self):
+        assert _status("float", "int") is Compat.ERROR
 
-    def test_population_tuning_curve_feeds_tuning_curve(self):
-        # Special-cased so the population rate map can drive a single-curve decoder.
-        ok, _ = validate_connection(
+    def test_any_matches_anything(self):
+        assert _status("NeuroData[spike_times]", "NeuroData[any]") is Compat.OK
+        assert _status("str", "NeuroData[any]") is Compat.OK   # any = true match-all
+        assert _status("NeuroData[any]", "NeuroData[lfp]") is Compat.OK
+
+    def test_str_feeds_str(self):
+        assert _status("str", "str") is Compat.OK
+
+
+class TestRoles:
+    def test_isa_role_match_is_ok(self):
+        # lfp is-a signal (raw_signal maps to role 'signal').
+        assert _status("NeuroData[lfp]", "NeuroData[raw_signal]") is Compat.OK
+
+    def test_population_tuning_curve_isa_tuning_curve(self):
+        # tuning_curves_population is-a tuning_curve (structurally compatible too).
+        assert _status(
             "NeuroData[tuning_curves_population]", "NeuroData[tuning_curve]"
-        )
-        assert ok is True
+        ) is Compat.OK
 
-    def test_unknown_external_type_is_allowed(self):
-        # Types absent from the table (third-party libs) pass without checking.
-        ok, _ = validate_connection("NeuroData[custom_external]", "NeuroData[whatever]")
-        assert ok is True
+    def test_role_mismatch_same_structure_is_warn(self):
+        # lfp and spike_times are both float timed arrays -> structural OK,
+        # but roles differ -> soft WARN (connectable), not ERROR.
+        status, msg = validate_connection("NeuroData[lfp]", "NeuroData[spike_times]")
+        assert status is Compat.WARN
+        assert "role" in msg.lower()
 
-    def test_str_only_feeds_str(self):
-        assert validate_connection("str", "str")[0] is True
-        assert validate_connection("str", "NeuroData[any]")[0] is False
+    def test_unknown_external_same_tag_is_ok(self):
+        assert _status("NeuroData[custom_x]", "NeuroData[custom_x]") is Compat.OK
+
+    def test_unknown_external_diff_tag_is_warn(self):
+        # Previously silently allowed; now warns (structure is 'any', roles differ).
+        assert _status("NeuroData[custom_x]", "NeuroData[custom_y]") is Compat.WARN
+
+
+class TestInferPortType:
+    def test_infer_neurodata_facets(self):
+        import numpy as np
+        from neurodata.types import NeuroData
+        nd = NeuroData(data_type="lfp", array=np.zeros((4, 100), dtype=float),
+                       sampling_rate=1250.0)
+        pt = infer_port_type(nd)
+        assert pt.container == "neurodata"
+        assert pt.dtype == "float" and pt.ndim == 2 and pt.timed is True
+        assert pt.role == "lfp"
+
+    def test_infer_scalars_and_str(self):
+        assert infer_port_type(3.0).container == "scalar"
+        assert infer_port_type(3.0).dtype == "float"
+        assert infer_port_type(True).dtype == "bool"   # bool before int
+        assert infer_port_type(2).dtype == "int"
+        assert infer_port_type("x").container == "str"
+
+    def test_inferred_value_checks_against_declared_port(self):
+        import numpy as np
+        from neurodata.types import NeuroData
+        # An untimed 1-D float array fed where a timed lfp signal is required.
+        bad = NeuroData(data_type="tuning_curve", array=np.zeros(50, dtype=float))
+        status, _ = check_types(infer_port_type(bad), parse_port_type("NeuroData[lfp]"))
+        assert status is Compat.ERROR
 
 
 # ---------------------------------------------------------------------------
@@ -71,6 +120,10 @@ def _lfp_in():
 
 def _spike_in():
     return [PortDefinition("in", "NeuroData[spike_times]", "")]
+
+
+def _str_in():
+    return [PortDefinition("in", "str", "")]
 
 
 def _node(node_id, block_type_id):
@@ -102,9 +155,10 @@ class TestValidateWorkflow:
         errors = validate_workflow(wf)
         assert any("not registered" in e for e in errors)
 
-    def test_type_mismatch_reported(self, make_block):
+    def test_structural_mismatch_reported(self, make_block):
+        # A NeuroData output into a str input is a hard structural error.
         make_block("producer", lambda i, p: {"out": None}, outputs=_lfp_out())
-        make_block("consumer", lambda i, p: {}, inputs=_spike_in())
+        make_block("consumer", lambda i, p: {}, inputs=_str_in())
         wf = {
             "nodes": [_node("n1", "producer"), _node("n2", "consumer")],
             "edges": [_edge("e1", "n1", "out", "n2", "in")],
@@ -112,6 +166,17 @@ class TestValidateWorkflow:
         errors = validate_workflow(wf)
         assert len(errors) == 1
         assert "e1" in errors[0]
+
+    def test_role_mismatch_is_not_a_workflow_error(self, make_block):
+        # lfp -> spike_times is a role WARN (structurally fine), so the workflow
+        # validator (hard errors only) must not report it.
+        make_block("producer", lambda i, p: {"out": None}, outputs=_lfp_out())
+        make_block("consumer", lambda i, p: {}, inputs=_spike_in())
+        wf = {
+            "nodes": [_node("n1", "producer"), _node("n2", "consumer")],
+            "edges": [_edge("e1", "n1", "out", "n2", "in")],
+        }
+        assert validate_workflow(wf) == []
 
     def test_missing_source_node_reported(self, make_block):
         make_block("consumer", lambda i, p: {}, inputs=_lfp_in())

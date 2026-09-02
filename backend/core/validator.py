@@ -1,62 +1,35 @@
-"""Port type validation for SynapChart pipelines."""
+"""Port type validation for SynapChart pipelines.
+
+Port Type System v2 (see docs/specs/12_port_type_system_v2.md): compatibility is
+*derived* from a structural type + an advisory semantic role, not a
+hand-maintained matrix. :func:`check_types` in ``neurodata.port_types`` returns
+a three-state result (OK / WARN / ERROR); this module adapts it to the existing
+string-based callers.
+"""
 
 
 from __future__ import annotations
 
-# Maps each output type to the set of input types it is compatible with.
-# "str" is also accepted by "str" (used by dataset_iterator dynamic ports).
-_COMPATIBILITY: dict[str, set[str]] = {
-    "NeuroData[raw_signal]":   {"NeuroData[raw_signal]", "NeuroData[any]"},
-    "NeuroData[lfp]":          {"NeuroData[lfp]", "NeuroData[raw_signal]", "NeuroData[any]"},
-    "NeuroData[spike_times]":  {"NeuroData[spike_times]", "NeuroData[any]"},
-    "NeuroData[spike_matrix]": {"NeuroData[spike_matrix]", "NeuroData[any]"},
-    "NeuroData[position]":     {"NeuroData[position]", "NeuroData[any]"},
-    "NeuroData[tuning_curve]": {"NeuroData[tuning_curve]", "NeuroData[any]"},
-    "NeuroData[decoded]":      {"NeuroData[decoded]", "NeuroData[any]"},
-    "NeuroData[any]":          {"NeuroData[any]"},
-    # Scalars can feed collect_results (NeuroData[any]) since _stack_items
-    # handles non-NeuroData values via np.asarray.
-    "float":                   {"float", "NeuroData[any]"},
-    "int":                     {"int", "float", "NeuroData[any]"},
-    "str":                     {"str"},
-    # ── CRCNS / population types ────────────────────────────────────────────
-    # tuning_curves_population is also compatible with tuning_curve so the
-    # existing bayesian_decoder can accept a population rate map directly.
-    "NeuroData[multi_spike_times]":        {"NeuroData[multi_spike_times]", "NeuroData[any]"},
-    "NeuroData[epochs]":                   {"NeuroData[epochs]", "NeuroData[any]"},
-    "NeuroData[tuning_curves_population]": {
-        "NeuroData[tuning_curves_population]",
-        "NeuroData[tuning_curve]",
-        "NeuroData[any]",
-    },
-    "NeuroData[place_fields]":   {"NeuroData[place_fields]",   "NeuroData[any]"},
-    "NeuroData[phase_precession]": {"NeuroData[phase_precession]", "NeuroData[any]"},
-    "NeuroData[theta_cycles]":   {"NeuroData[theta_cycles]",   "NeuroData[any]"},
-    "NeuroData[theta_sequence]": {"NeuroData[theta_sequence]", "NeuroData[any]"},
-    "NeuroData[laps]":           {"NeuroData[laps]",           "NeuroData[any]"},
-}
+from neurodata.port_types import Compat, check_types, parse_port_type
 
 
 def validate_connection(
     output_port_type: str,
     input_port_type: str,
-) -> tuple[bool, str]:
+) -> tuple[Compat, str]:
     """Check whether a connection from an output port to an input port is allowed.
 
-    Types not present in _COMPATIBILITY (e.g. from external libraries) are
-    accepted without type-checking rather than rejected, so that third-party
-    blocks with custom NeuroData subtypes work without modifying core code.
+    Returns a (:class:`Compat`, message) pair:
+      * ``Compat.OK``    — structure fits and roles agree (or are unspecified).
+      * ``Compat.WARN``  — structure fits but roles differ; connectable with a
+        confirmation. Callers that only gate on hard errors treat this as valid.
+      * ``Compat.ERROR`` — structural mismatch; connection is rejected.
+
+    Unknown / external types parse to a permissive ``any`` structure, so
+    third-party blocks are never hard-rejected.
     """
-    accepted = _COMPATIBILITY.get(output_port_type)
-    if accepted is None:
-        # Unknown type (external library) — allow the connection
-        return True, ""
-    if input_port_type not in accepted:
-        return False, (
-            f"Type mismatch: output '{output_port_type}' is not compatible "
-            f"with input '{input_port_type}'."
-        )
-    return True, ""
+    return check_types(parse_port_type(output_port_type),
+                       parse_port_type(input_port_type))
 
 
 def validate_workflow(workflow: dict) -> list[str]:
@@ -138,8 +111,10 @@ def validate_workflow(workflow: dict) -> list[str]:
             )
             continue
 
-        is_valid, message = validate_connection(src_port["type"], tgt_port["type"])
-        if not is_valid:
+        status, message = validate_connection(src_port["type"], tgt_port["type"])
+        # Only structural mismatches block a workflow. Role mismatches are
+        # advisory (surfaced at connection time in the UI), not hard errors.
+        if status is Compat.ERROR:
             errors.append(f"Edge '{edge_id}': {message}")
 
     return errors

@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from blocks.base import BlockBase, CompositeBlockDefinition
 from core.validator import validate_connection
+from neurodata.port_types import Compat
 from core.block_registry import all_blocks, get_block, register_block, unregister_block
 from core.library_registry import list_libraries, detect_conflicts
 
@@ -524,8 +525,10 @@ async def get_block_definition(block_type_id: str) -> dict:
 
 @router.post("/validate-connection")
 async def validate_connection_endpoint(request: ConnectionRequest) -> dict:
-    is_valid, message = validate_connection(request.output_type, request.input_type)
-    return {"valid": is_valid, "message": message}
+    status, message = validate_connection(request.output_type, request.input_type)
+    # `valid` stays back-compatible (WARN is connectable); `status` is the new
+    # three-state value ("ok"|"warn"|"error") the canvas UI consumes.
+    return {"valid": status is not Compat.ERROR, "status": status.value, "message": message}
 
 
 # ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@ import pytest
 
 from blocks.base import PortDefinition
 from core.validator import validate_connection, validate_workflow
-from neurodata.port_types import Compat
+from neurodata.port_types import Compat, PortType, check_types, infer_port_type, parse_port_type
 
 
 def _status(out, req):
@@ -77,6 +77,33 @@ class TestRoles:
     def test_unknown_external_diff_tag_is_warn(self):
         # Previously silently allowed; now warns (structure is 'any', roles differ).
         assert _status("NeuroData[custom_x]", "NeuroData[custom_y]") is Compat.WARN
+
+
+class TestInferPortType:
+    def test_infer_neurodata_facets(self):
+        import numpy as np
+        from neurodata.types import NeuroData
+        nd = NeuroData(data_type="lfp", array=np.zeros((4, 100), dtype=float),
+                       sampling_rate=1250.0)
+        pt = infer_port_type(nd)
+        assert pt.container == "neurodata"
+        assert pt.dtype == "float" and pt.ndim == 2 and pt.timed is True
+        assert pt.role == "lfp"
+
+    def test_infer_scalars_and_str(self):
+        assert infer_port_type(3.0).container == "scalar"
+        assert infer_port_type(3.0).dtype == "float"
+        assert infer_port_type(True).dtype == "bool"   # bool before int
+        assert infer_port_type(2).dtype == "int"
+        assert infer_port_type("x").container == "str"
+
+    def test_inferred_value_checks_against_declared_port(self):
+        import numpy as np
+        from neurodata.types import NeuroData
+        # An untimed 1-D float array fed where a timed lfp signal is required.
+        bad = NeuroData(data_type="tuning_curve", array=np.zeros(50, dtype=float))
+        status, _ = check_types(infer_port_type(bad), parse_port_type("NeuroData[lfp]"))
+        assert status is Compat.ERROR
 
 
 # ---------------------------------------------------------------------------

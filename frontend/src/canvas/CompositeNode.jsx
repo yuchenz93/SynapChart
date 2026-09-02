@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Handle, Position } from 'reactflow';
 import usePipelineStore, { compositeBlockToDefinition } from '../store/pipelineStore';
-import { CanvasContext, isCompatible } from './CanvasContext';
+import { CanvasContext, compatState } from './CanvasContext';
 
 /** Maps composite category names to header background colors. */
 const CATEGORY_COLORS = {
@@ -65,14 +65,14 @@ export default function CompositeNode({ id, data }) {
   const targetHandleStyle = (port) => {
     const occupied = isOccupied(port.port_id);
     if (pending && !isSourceNode) {
-      const compatible = isCompatible(pending.sourcePortType, port.type);
-      const ringColor  = compatible ? '#22c55e' : '#ef4444';
+      const state = compatState(pending.sourcePortType, port.type);
+      const ringColor = state === 'ok' ? '#22c55e' : state === 'warn' ? '#f59e0b' : '#ef4444';
       return {
         width: 10, height: 10,
         background: occupied ? ringColor : 'transparent',
         border: `2px solid ${ringColor}`,
         boxShadow: `0 0 5px ${ringColor}80`,
-        cursor: compatible && !occupied ? 'pointer' : 'not-allowed',
+        cursor: state !== 'error' && !occupied ? 'pointer' : 'not-allowed',
       };
     }
     return {

@@ -5,12 +5,36 @@ import { getBlocks, getBlockSource, createBlock, updateBlock, testRunBlock, regi
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-const PORT_TYPES = [
-  'NeuroData[raw_signal]', 'NeuroData[lfp]', 'NeuroData[spike_times]',
-  'NeuroData[spike_matrix]', 'NeuroData[position]', 'NeuroData[tuning_curve]',
-  'NeuroData[decoded]', 'NeuroData[any]',
-  'float', 'int', 'str', 'bool',
+// Port Types v2: a port is authored as a structural "kind" plus, for NeuroData,
+// an optional free-text semantic "role" (autocompleted from observed roles).
+// The row still stores a single canonical `data_type` string that the backend
+// parser understands; these helpers convert to/from (kind, role).
+const KIND_OPTIONS = ['NeuroData', 'float', 'int', 'bool', 'str', 'list[str]', 'any'];
+
+// Roles suggested even before any block declares them.
+const COMMON_ROLES = [
+  'signal', 'lfp', 'spike_times', 'spike_matrix', 'multi_spike_times',
+  'position', 'tuning_curve', 'decoded', 'epochs', 'laps',
 ];
+
+function typeToKindRole(t) {
+  if (!t) return { kind: 'NeuroData', role: '' };
+  if (t === 'any') return { kind: 'any', role: '' };
+  const m = /^NeuroData\[([A-Za-z0-9_]+)\]$/.exec(t);
+  if (m) return { kind: 'NeuroData', role: m[1] === 'any' ? '' : m[1] };
+  if (t === 'float' || t === 'int' || t === 'bool' || t === 'str') return { kind: t, role: '' };
+  if (/^list\[/.test(t)) return { kind: 'list[str]', role: '' };
+  if (/^array</.test(t)) return { kind: 'NeuroData', role: '' };   // explicit structure form
+  return { kind: 'NeuroData', role: '' };
+}
+
+function kindRoleToType(kind, role) {
+  if (kind === 'NeuroData') return `NeuroData[${(role || '').trim() || 'any'}]`;
+  if (kind === 'list[str]') return 'list[str]';
+  if (kind === 'any') return 'any';
+  return kind;   // float | int | bool | str
+}
+
 const PARAM_TYPES = ['str', 'float', 'int', 'bool', 'enum'];
 
 // ─── Template generator ───────────────────────────────────────────────────────
@@ -121,8 +145,8 @@ function generateTemplate(inputs, outputs, params) {
 const toId = (name) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 
-const emptyInput  = () => ({ port_id: '', data_type: 'NeuroData[raw_signal]', description: '', required: true });
-const emptyOutput = () => ({ port_id: '', data_type: 'NeuroData[raw_signal]', description: '' });
+const emptyInput  = () => ({ port_id: '', data_type: 'NeuroData[signal]', description: '', required: true });
+const emptyOutput = () => ({ port_id: '', data_type: 'NeuroData[signal]', description: '' });
 const emptyParam  = () => ({ name: '', data_type: 'float', default: '', description: '', enum_values: '' });
 
 // Convert definition format (from API) → wizard row format
@@ -186,24 +210,34 @@ function PortTable({ title, rows, setRows, withRequired }) {
         : (
           <>
             <div style={{ display: 'flex', gap: 6, marginBottom: 3 }}>
-              {['Port name', 'Data type', 'Description', ...(withRequired ? ['Req'] : []), ''].map((h, i) => (
-                <span key={i} style={{ flex: h === '' ? '0 0 22px' : h === 'Req' ? '0 0 30px' : i === 1 ? 3 : i === 0 ? 2 : 4, fontSize: 10, color: '#6b7280' }}>{h}</span>
+              {['Port name', 'Kind', 'Role', 'Description', ...(withRequired ? ['Req'] : []), ''].map((h, i) => (
+                <span key={i} style={{ flex: h === '' ? '0 0 22px' : h === 'Req' ? '0 0 30px' : h === 'Port name' ? 2 : h === 'Kind' ? '0 0 96px' : h === 'Role' ? 2 : 3, fontSize: 10, color: '#6b7280' }}>{h}</span>
               ))}
             </div>
-            {rows.map((row, idx) => (
+            {rows.map((row, idx) => {
+              const { kind, role } = typeToKindRole(row.data_type);
+              return (
               <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
                 <input value={row.port_id} onChange={e => update(idx, 'port_id', e.target.value)} style={{ ...iS, flex: 2 }} placeholder="port_id" />
-                <select value={row.data_type} onChange={e => update(idx, 'data_type', e.target.value)} style={{ ...iS, flex: 3 }}>
-                  {PORT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                <select value={kind} onChange={e => update(idx, 'data_type', kindRoleToType(e.target.value, role))} style={{ ...iS, flex: '0 0 96px' }}>
+                  {KIND_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
-                <input value={row.description} onChange={e => update(idx, 'description', e.target.value)} style={{ ...iS, flex: 4 }} placeholder="description" />
+                {kind === 'NeuroData' ? (
+                  <input list="wizard-roles" value={role}
+                    onChange={e => update(idx, 'data_type', kindRoleToType('NeuroData', e.target.value))}
+                    style={{ ...iS, flex: 2 }} placeholder="role (optional)" />
+                ) : (
+                  <span style={{ flex: 2, fontSize: 10, color: '#4b5563', alignSelf: 'center' }}>—</span>
+                )}
+                <input value={row.description} onChange={e => update(idx, 'description', e.target.value)} style={{ ...iS, flex: 3 }} placeholder="description" />
                 {withRequired && (
                   <input type="checkbox" checked={row.required} onChange={e => update(idx, 'required', e.target.checked)} style={{ flex: '0 0 30px' }} />
                 )}
                 <button onClick={() => setRows(r => r.filter((_, i) => i !== idx))}
                   style={{ flex: '0 0 22px', background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 14, padding: 0 }}>✕</button>
               </div>
-            ))}
+              );
+            })}
           </>
         )
       }
@@ -264,6 +298,22 @@ export default function BlockWizard({ editBlock = null, onClose, saveToLibrary =
   const existingCategories = [...new Set(
     blockLibrary.flatMap(lib => (lib.categories ?? []).map(c => c.name))
   )].sort();
+
+  // Semantic roles observed across the library (+ common ones) for autocomplete.
+  const observedRoles = (() => {
+    const s = new Set(COMMON_ROLES);
+    for (const lib of blockLibrary) {
+      for (const cat of (lib.categories ?? [])) {
+        for (const b of (cat.blocks ?? [])) {
+          for (const p of [...(b.inputs ?? []), ...(b.outputs ?? [])]) {
+            const m = /^NeuroData\[([A-Za-z0-9_]+)\]$/.exec(p.type || '');
+            if (m && m[1] !== 'any') s.add(m[1]);
+          }
+        }
+      }
+    }
+    return [...s].sort();
+  })();
 
   const isEdit      = Boolean(editBlock?.is_custom);
   // Local edit: editing a block that lives in the workflow's local_blocks array,
@@ -471,6 +521,10 @@ export default function BlockWizard({ editBlock = null, onClose, saveToLibrary =
       background: 'rgba(0,0,0,0.7)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
+      {/* Shared role autocomplete source for the Ports step */}
+      <datalist id="wizard-roles">
+        {observedRoles.map(r => <option key={r} value={r} />)}
+      </datalist>
       <div style={{
         background: '#1f2937', border: '1px solid #374151', borderRadius: 10,
         width: 820, maxHeight: '90vh',

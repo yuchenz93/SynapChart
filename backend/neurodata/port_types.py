@@ -171,6 +171,38 @@ def _role_matches(a: str, b: str) -> bool:
     return a == b or _is_ancestor(a, b) or _is_ancestor(b, a)
 
 
+def infer_port_type(value) -> PortType:
+    """Infer a :class:`PortType` from a concrete runtime value.
+
+    Enables optional executor-side structure checks: compare the real payload
+    flowing on an edge against the target port's declared type. The NeuroData
+    ``data_type`` tag is carried through as the value's role.
+    """
+    from neurodata.types import NeuroData  # local import avoids a cycle
+
+    if isinstance(value, NeuroData):
+        arr = value.array
+        kind = getattr(getattr(arr, "dtype", None), "kind", None)
+        dtype = {"f": "float", "i": "int", "u": "int", "b": "bool"}.get(kind, "any")
+        ndim = getattr(arr, "ndim", None)
+        timed = value.sampling_rate is not None or value.timestamps is not None
+        return PortType(_ND, dtype=dtype, ndim=ndim, timed=timed,
+                        role=value.data_type or None)
+    if isinstance(value, bool):   # bool before int (bool is an int subclass)
+        return PortType("scalar", dtype="bool")
+    if isinstance(value, int):
+        return PortType("scalar", dtype="int")
+    if isinstance(value, float):
+        return PortType("scalar", dtype="float")
+    if isinstance(value, str):
+        return PortType("str")
+    if isinstance(value, list):
+        return PortType("list")
+    if isinstance(value, dict):
+        return PortType("dict")
+    return PortType("any")
+
+
 def check_types(out: PortType, req: PortType) -> tuple[Compat, str]:
     """Return (Compat, message) for wiring an `out` port into a `req` input port."""
     # 1. Structural — hard.

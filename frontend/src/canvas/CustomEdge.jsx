@@ -115,12 +115,15 @@ export default function CustomEdge({
   }, [id]);
 
   // ── Visual style ─────────────────────────────────────────────────────────
+  // Role-mismatch (WARN) edges render amber + dashed with a ⚠ badge so the
+  // graph self-documents intentional cross-role wiring (Port Types v2).
+  const warn = !!data?.warn;
   const strokeColor = selected
     ? '#a5b4fc'
-    : (style.stroke ?? '#4b5563');
+    : warn ? '#f59e0b' : (style.stroke ?? '#4b5563');
   const strokeWidth = selected
     ? 2.5
-    : (style.strokeWidth ?? 1.5);
+    : (style.strokeWidth ?? (warn ? 1.75 : 1.5));
 
   return (
     <>
@@ -132,6 +135,7 @@ export default function CustomEdge({
         stroke={strokeColor}
         strokeWidth={strokeWidth}
         markerEnd={markerEnd}
+        strokeDasharray={warn && !selected ? '6 4' : undefined}
         style={{
           filter: selected
             ? 'drop-shadow(0 0 4px rgba(165,180,252,0.5))'
@@ -148,6 +152,17 @@ export default function CustomEdge({
         strokeWidth={14}
         style={{ cursor: 'pointer' }}
       />
+
+      {/* Role-mismatch ⚠ badge — shown when not selected (drag handle takes over) */}
+      {warn && !selected && !isDragging && (
+        <g style={{ pointerEvents: 'none' }}>
+          <circle cx={handlePos.x} cy={handlePos.y} r={8}
+            fill="#78350f" stroke="#f59e0b" strokeWidth={1.5} />
+          <text x={handlePos.x} y={handlePos.y + 3.5} textAnchor="middle"
+            fontSize={10} fill="#fbbf24">⚠</text>
+          <title>{data?.warnMsg || 'Type role mismatch'}</title>
+        </g>
+      )}
 
       {/* Midpoint drag handle — visible when selected or actively dragging */}
       {(selected || isDragging) && (

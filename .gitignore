@@ -48,3 +48,6 @@ docs/specs/
 # claude related
 .claude/
 
+# Screenshot capture harness (local tooling; regenerates docs/assets/screenshots/)
+_shots/
+

@@ -220,6 +220,26 @@ The cyan dashed vertical line marks the trough (t = 0). The white dotted horizon
 !!! note "Interpreting weaker sequences"
     Theta sequences are typically clearest in the first MazeEpoch and in animals with strong, well-isolated place cells. If the heatmap looks flat or noisy, try the `Achilles` or `Buddy` animals which tend to have the largest cell counts in HC-11.
 
+### Does this match the literature?
+
+The diagonal look-ahead structure you should see here is the well-established
+signature of hippocampal theta sequences, first characterised on linear tracks by
+Skaggs et al. (1996) and quantified as within-cycle trajectory sweeps by Foster &
+Wilson (2007) and Feng, Silva & Foster (2015). The HC-11 dataset used here is the
+same recording published in Grosmark & Buzsáki (2016). Concretely, a correct run
+should reproduce:
+
+- a **positive diagonal** (decoded position behind the animal early in the cycle,
+  ahead of it late in the cycle) crossing the trough (t = 0) and zero-lag lines;
+- the effect present in **both** running directions (the two heatmaps should look
+  broadly similar in structure, if not identical in strength);
+- a flat/uniform map if you shuffle the cycle-to-lap assignment — a useful
+  sanity check that the structure is not an artefact of the averaging.
+
+If your heatmap shows a diagonal like this, the decoder, phase extraction, and
+theta-cycle detection are all behaving as intended. See
+[References](#references) below for the source papers.
+
 ---
 
 ## Part 7 — Adjustable Parameters
@@ -263,3 +283,27 @@ In this tutorial you:
 - [Block Reference](../blocks/index.md) — full documentation of all built-in blocks and their parameters
 - [Flow Control Blocks](../advanced/flow-control.md) — Dataset Iterator and Collect Results for batch processing across multiple sessions
 - [Composite Blocks](../advanced/composite-blocks.md) — package this pipeline as a reusable block (Tutorial 1 covers the basics)
+
+---
+
+## References
+
+**Dataset**
+
+- Grosmark, A.D., Long J. & Buzsáki, G. (2016). *Recordings from hippocampal area
+  CA1, PRE, during and POST novel spatial learning.* CRCNS.org.
+  [https://doi.org/10.6080/K0862DC5](https://doi.org/10.6080/K0862DC5)
+- Grosmark, A.D. & Buzsáki, G. (2016). Diversity in neural firing dynamics
+  supports both rigid and learned hippocampal sequences. *Science* 351(6280),
+  1440–1443.
+
+**Theta sequences**
+
+- Skaggs, W.E., McNaughton, B.L., Wilson, M.A. & Barnes, C.A. (1996). Theta phase
+  precession in hippocampal neuronal populations and the compression of temporal
+  sequences. *Hippocampus* 6(2), 149–172.
+- Foster, D.J. & Wilson, M.A. (2007). Hippocampal theta sequences.
+  *Hippocampus* 17(11), 1093–1099.
+- Feng, T., Silva, D. & Foster, D.J. (2015). Dissociation between the experience-
+  dependent development of hippocampal theta sequences and single-trial phase
+  precession. *Journal of Neuroscience* 35(12), 4890–4902.

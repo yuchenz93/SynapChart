@@ -15,7 +15,9 @@ _SAFE_NAME_RE = re.compile(r'^[A-Za-z0-9_-]+$')
 
 router = APIRouter()
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent / "workflows" / "templates"
+# Ships inside the `backend` package (backend/workflows/templates) so templates
+# are available in a pip install, not just a source checkout.
+TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "workflows" / "templates"
 
 
 class SaveRequest(BaseModel):

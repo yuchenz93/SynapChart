@@ -8,19 +8,25 @@ SynapChart is a visual pipeline builder for neuroscience data analysis. You wire
 
 ### Requirements
 
-- Windows 10 or 11
-- Python 3.10 or later ([download](https://www.python.org/downloads/))
-- A conda environment is recommended (Anaconda or Miniconda)
+- **Windows, macOS, or Linux** (SynapChart is pure Python + a browser UI; the CI
+  test suite runs on Linux across Python 3.10–3.12)
+- **Python 3.10 or later** ([download](https://www.python.org/downloads/))
+- A virtual environment (`venv` or conda) is recommended to keep the install isolated
 
 ### Install
 
 ```bash
-# Recommended: create a clean environment
-conda create -n synapchart python=3.11
-conda activate synapchart
+# Recommended: install into a clean virtual environment
+python -m venv synapchart-env
+# Windows:      synapchart-env\Scripts\activate
+# macOS/Linux:  source synapchart-env/bin/activate
 
 pip install synapchart
 ```
+
+!!! tip "Prefer conda?"
+    `conda create -n synapchart python=3.11 && conda activate synapchart`, then
+    `pip install synapchart`, works just as well.
 
 ### Launch
 
@@ -29,6 +35,59 @@ synapchart
 ```
 
 SynapChart starts a local server and opens your browser automatically at `http://localhost:8000`. Keep the terminal open while working — press `Ctrl+C` to stop the server when done.
+
+!!! question "Something not working?"
+    - **Browser didn't open?** Go to `http://localhost:8000` manually.
+    - **Port already in use?** Start on another port: `synapchart --port 8123`.
+    - **`synapchart: command not found`?** The environment where you ran
+      `pip install` isn't active — re-activate it, or run
+      `python -m backend.cli`.
+
+---
+
+## Your first pipeline (about 5 minutes)
+
+The fastest way to see SynapChart produce a real result is to run a built-in
+**template** on the example data.
+
+!!! note "Templates ship with the package; the example data is generated"
+    The example workflow **templates** are bundled with SynapChart, so the
+    *Templates* menu is populated the moment you install. The tutorial
+    **datasets** are not shipped — you generate them with a small script from the
+    [repository](https://github.com/yuchenz93/SynapChart). The easiest way to get
+    that script (and a working directory) is to clone the repo:
+
+    ```bash
+    git clone https://github.com/yuchenz93/SynapChart.git
+    cd SynapChart
+    ```
+
+1. **Generate the example data** — three synthetic hippocampal sessions:
+
+    ```bash
+    python scripts/generate_phase_precession_data.py
+    ```
+
+    This writes `phase_precession_1_lfp.npy`, `_spikes.npy`, `_position.npy`
+    (and `_2_`, `_3_`) into the `scripts/` folder.
+
+2. **Launch** SynapChart (from anywhere — templates are bundled):
+
+    ```bash
+    synapchart
+    ```
+
+3. In the toolbar click **Templates → Tutorial → theta_phase_precession**. A
+   10-block pipeline loads on the canvas.
+
+4. Double-click each of the three **Load** blocks and set its `file_path` to the
+   matching file from step 1 (`…/scripts/phase_precession_1_lfp.npy`, etc.).
+
+5. Click **Run**. Two plots appear — a place field and a theta phase-precession
+   scatter. That's a complete analysis pipeline.
+
+[Tutorial 1](tutorials/tutorial1.md) builds this same result step by step, then
+extends it with a custom block and a reusable composite block.
 
 ---
 

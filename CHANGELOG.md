@@ -8,6 +8,15 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Port Type System v2.** Replaced the closed "registered data types" list and
+  the fixed compatibility table with a two-axis model: a **structural type**
+  (container / dtype / ndim / timed) that is enforced, plus a **free-form,
+  advisory role** (e.g. `lfp`, `spike_times`, or anything you invent). Connection
+  validation is now three-state — OK / WARN (role mismatch, still connectable) /
+  ERROR (structural mismatch, blocked) — and roles can be added in custom blocks
+  without editing any core file. See `docs/neurodata.md`.
+
 ### Added
 - Initial project scaffold: FastAPI backend, React + React Flow frontend
 - NeuroData type system with 8 registered data types

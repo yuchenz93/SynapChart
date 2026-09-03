@@ -57,7 +57,7 @@ where = ["."]
 include = ["backend*"]
 
 [tool.setuptools.package-data]
-"backend" = ["static/**/*", "blocks/**/*.py", "workflows/templates/*.json"]
+"backend" = ["static/**/*", "blocks/**/*.py", "workflows/templates/**/*.json"]
 
 [tool.setuptools_scm]
 # Version is derived automatically from git tags (e.g. tag v0.1.0 → version 0.1.0)

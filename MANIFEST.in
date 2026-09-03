@@ -3,4 +3,4 @@ include CHANGELOG.md
 include LICENSE
 recursive-include backend/static *
 recursive-include backend/blocks *.py
-recursive-include workflows/templates *.json
+recursive-include backend/workflows/templates *.json
